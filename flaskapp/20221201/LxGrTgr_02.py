@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.1"
-version_notes = "0.0.1 - Built on 2.1.17; Tags follow discussions with Doug, Randi, and Jesse (with a few tweaks)."
+version = "0.0.2"
+version_notes = "0.0.2 - bug fixes Built on 2.1.17; Tags follow discussions with Doug, Randi, and Jesse (with a few tweaks)."
 
 
 import glob #for finding all filenames in a folder
