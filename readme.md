@@ -1,5 +1,5 @@
 # Lexicogrammatical Tagger (LxGrTgr)
-
+Note that LxGrTgr is currently being beta tested and should not be used in research. Once the beta testing concludes, this message will change.
 ## Quick Start Guide
 LxGrTgr was developed using Spacy (version 3.4; en_core_web_trf model). Users will need to follow the instructions on [Spacy's website](https://spacy.io/usage) to download Spacy for your specific system and the en_core_web_trf model.
 
