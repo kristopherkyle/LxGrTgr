@@ -4,6 +4,8 @@ from flask import Flask, redirect, render_template, request, url_for
 
 import LxGrTgr_01 as lxgr
 
+version = ".01" 
+
 def rundata(text):
 	#print(text)
 	if len(text) == 0:
