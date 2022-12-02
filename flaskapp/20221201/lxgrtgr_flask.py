@@ -28,6 +28,27 @@ class sampleTok():
 		self.cat8 = ""
 		self.cat9 = ""
 
+def simplify_output(tokObj):
+	if tokObj.lxgrtag == None:
+		tokObj.lxgrtag = ""
+	if tokObj.cat1 == None:
+		tokObj.cat1 = ""
+	if tokObj.cat2 == None:
+		tokObj.cat2 = ""
+	if tokObj.cat3 == None:
+		tokObj.cat3 = ""
+	if tokObj.cat4 == None:
+		tokObj.cat4 = ""
+	if tokObj.cat5 == None:
+		tokObj.cat5 = ""
+	if tokObj.cat6 == None:
+		tokObj.cat6 = ""
+	if tokObj.cat7 == None:
+		tokObj.cat7 = ""
+	if tokObj.cat8 == None:
+		tokObj.cat8 = ""
+	return(tokObj)
+
 def rundata(text):
 	#print(text)
 	if len(text) == 0:
@@ -37,6 +58,7 @@ def rundata(text):
 		tagged =  lxgr.tag(text)
 		for sent in tagged:
 			for token in sent:
+				token = simplify_output(token)
 				output.append(token)
 			bufferTok = sampleTok()
 			output.append(bufferTok)
