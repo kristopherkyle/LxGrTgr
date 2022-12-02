@@ -1,0 +1,93 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+		<title>TAALED Explorer</title>
+		<style>
+		img {
+		width: 250;
+		height: auto;
+		}
+		p {
+  		padding: 10px;
+		}
+		.btn {
+		padding: 10px;
+		}
+		span, input {
+		margin: 5px 0 5px 0; /* top right bottom left */
+		}
+		</style>
+	</head>
+
+	<body>
+		<nav class="navbar navbar-inverse">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">TAALED Explorer</a>
+				</div>
+			</div>
+		</nav>
+
+
+<div class="container">
+
+
+		<div class="row">
+			<form action="." method="POST">
+				<textarea class="form-control" name="contents" placeholder="Enter a text here"></textarea>
+				<input type="submit" class="btn btn-success" value="Run text processor">
+			</form>
+		</div>
+
+</div><!-- /.container -->
+
+
+<div class="container">
+<table class = table>
+	<thead>
+		<tr>
+			<th scope = "row">Category</th>
+			<th scope = "row">Output</th>
+		</tr>
+	<tbody>
+
+
+{% for item in items %}
+<TR>
+	<TD class="c1">Index Value</TD>
+	<TD class="c2">{{ item["value"] }}</TD>
+</TR>
+<TR>
+	<TD class="c1">Distribution across windows</TD>
+	<!-- <TD class="c2">image placeholder</TD> -->
+	 <TD class="c2"><img id="picture" src="data:image/jpeg;base64,{{ item['image'] }}"></TD>
+	
+	 <!-- <TD class="c2"><img id="picture" src="data:image/jpeg;base64,{{ item['image'] }}"></TD> -->
+	
+</TR>
+
+<TR>
+	<TD class="c1">Type Frequencies</TD>
+	<TD class="c2">{{ item["type_freq"] }}</TD>
+</TR>
+
+
+{% endfor %}
+	</tbody>
+</table>
+
+</div><!-- /.container -->
+
+	</body>
+</html>

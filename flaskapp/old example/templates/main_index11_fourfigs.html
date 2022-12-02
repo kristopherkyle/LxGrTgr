@@ -1,0 +1,119 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+		<title>TAALED Explorer</title>
+		<style>
+		img {
+		width: 250;
+		height: auto;
+		}
+		p {
+  		padding: 10px;
+		}
+		.btn {
+		padding: 10px;
+		margin: 0,0,0,10px;
+		}
+		input, select {
+		margin: 5px 0 5px 15px; /* top right bottom left */
+		}
+		</style>
+	</head>
+
+	<body>
+		<nav class="navbar navbar-inverse">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">TAALED Explorer</a>
+				</div>
+			</div>
+		</nav>
+
+
+<div class="container">
+
+
+		<div class="row">
+			<form action="." method="POST">
+				<textarea class="form-control" name="contents" placeholder="Enter a text here"></textarea>
+				<label for="lang-select">Choose a language:</label>
+				<select name = "language" id = "lang-select">
+					<option value="Eng">English</option>
+					<option value="Span">Spanish</option>
+					<!-- ><option value="Other">Other*</option> -->
+				</select>
+				<div class="row">
+				<input type="submit" class="btn btn-success" value="Run text processor">
+				</div>
+			</form>
+		</div>
+
+</div><!-- /.container -->
+
+{% for item in items %}
+<div class="container">
+<table class = table>
+	<thead>
+		<tr>
+			<th scope = "row"></th>
+			<th scope = "row">{{ item["name1"] }}</th>
+			<th scope = "row">{{ item["name2"] }}</th>
+			<th scope = "row">{{ item["name3"] }}</th>
+			<th scope = "row">{{ item["name4"] }}</th>
+
+		</tr>
+	<tbody>
+
+
+
+<TR>
+	<TD class="c1">Index Value</TD>
+	<TD class="c2">{{ item["value1"] }}</TD>
+	<TD class="c3">{{ item["value2"] }}</TD>
+	<TD class="c4">{{ item["value3"] }}</TD>
+	<TD class="c5">{{ item["value4"] }}</TD>
+
+</TR>
+<TR>
+	<TD class="c1">Distribution across windows/factors</TD>
+	<!-- <TD class="c2">image placeholder</TD> -->
+	 <TD class="c2"><img id="picture" src="data:image/jpeg;base64,{{ item['image1'] }}"></TD>
+	 <TD class="c3"><img id="picture" src="data:image/jpeg;base64,{{ item['image2'] }}"></TD>
+	 <TD class="c4"><img id="picture" src="data:image/jpeg;base64,{{ item['image3'] }}"></TD>
+	 <TD class="c5"><img id="picture" src="data:image/jpeg;base64,{{ item['image4'] }}"></TD>
+
+	 <!-- <TD class="c2"><img id="picture" src="data:image/jpeg;base64,{{ item['image'] }}"></TD> -->
+	
+</TR>
+
+	</tbody>
+</table>
+
+<div class="container">
+<table class = table>
+
+<TR>
+	<TD class="c1">Type Frequencies</TD>
+	<TD class="c2">{{ item["type_freq"] }}</TD>
+</TR>
+
+
+{% endfor %}
+	</tbody>
+</table>
+
+</div><!-- /.container -->
+
+	</body>
+</html>
