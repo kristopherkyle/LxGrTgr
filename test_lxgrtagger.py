@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import LxGrTgr_01 as lxgr
+import LxGrTgr_04 as lxgr
 
 #create sample object, then print it
 sample1 = lxgr.tag("This is a very important opportunity that only comes once in a lifetime.")
