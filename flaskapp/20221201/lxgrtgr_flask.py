@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, redirect, render_template, request, url_for
 
-import LxGrTgr_04 as lxgr
+import LxGrTgr_05 as lxgr
 
 version = ".02" 
 
