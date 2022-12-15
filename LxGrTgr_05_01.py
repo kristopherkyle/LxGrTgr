@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5"
-version_notes = "0.0.5 - More bug fixes on 20221204; Tags follow discussions with Doug, Randi, and Jesse (with a few tweaks)."
+version = "0.0.5.1"
+version_notes = "0.0.5.1 - add functions to read ClearNLP conll files; remove dependence on upos tags; Tags follow discussions with Doug, Randi, and Jesse (with a few tweaks)."
 
 
 import glob #for finding all filenames in a folder
@@ -42,7 +42,7 @@ import re #for regulat expressions
 import spacy #base NLP
 #nlp = spacy.load("en_core_web_sm") #load model
 nlp = spacy.load("en_core_web_trf")  #load model
-#nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
+nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 ######################################################
 
 ### Load lists, etc. #################################
@@ -70,7 +70,7 @@ def safe_divide(numerator,denominator):
 # 	return(reparsed.toprettyxml(indent="    "))
 
 ###########################################
-class tokenInfo():	
+class tokenInfo():
 	def __init__(self, spacyToken): 
 		self.idx = None #will have to add this from position in sentence
 		self.word = spacyToken.text #raw text
@@ -80,7 +80,7 @@ class tokenInfo():
 		self.deprel = spacyToken.dep_ #dependency relation (based on CLEAR tagset)
 		self.head = spacyToken.head#.text #text of head
 		self.headidx = spacyToken.head.i #id of head
-		self.children = spacyToken.children
+		#self.children = spacyToken.children
 		self.lxgrtag = None #main tag
 		self.cat1 = None #additional tag (based on tag schema)
 		self.cat2 = None #additional tag (based on tag schema)
@@ -93,9 +93,38 @@ class tokenInfo():
 		self.cat9 = None #additional tag (based on tag schema)
 		self.semtag = None #additional tag (based on tag schema)
 
+class tokenBlank(): #empty token to fill
+	def __init__(self): 
+		self.idx = None #will have to add this from position in sentence
+		self.word = None #raw text
+		self.lemma = None #lowered lemma form
+		self.upos = None #Universal part of speech
+		self.xpos = None #penn tag
+		self.deprel = None #dependency relation (based on CLEAR tagset)
+		self.head = None#.text #text of head
+		self.headidx = None #id of head
+		#self.children =None
+		self.lxgrtag = None #main tag
+		self.cat1 = None #additional tag (based on tag schema)
+		self.cat2 = None #additional tag (based on tag schema)
+		self.cat3 = None #additional tag (based on tag schema)
+		self.cat4 = None #additional tag (based on tag schema)
+		self.cat5 = None #additional tag (based on tag schema)
+		self.cat6 = None #additional tag (based on tag schema)
+		self.cat7 = None #additional tag (based on tag schema)
+		self.cat8 = None #additional tag (based on tag schema)
+		self.cat9 = None #additional tag (based on tag schema)
+		self.semtag = None #additional tag (based on tag schema)
+
+class sentBlank():
+	def __init__(self):
+		self.meta = []
+		self.tokens = []
+
 ### Linguistic Analysis Functions ###
 def nouns(token,nominalStopList = nominal_stop): #revised 2022-11-22; This is probably overly greedy. It was filtered using frequent candidates in T2KSWAL and TMLE
-	if token.upos in ["NOUN", "PROPN"]:
+	if token.xpos[:2] == "NN":
+	#if token.upos in ["NOUN", "PROPN"]:
 		token.lxgrtag = "nn"
 		if token.xpos in ["NNS","NNPS"]:
 			token.cat1 = "pl"
@@ -110,7 +139,8 @@ def nouns(token,nominalStopList = nominal_stop): #revised 2022-11-22; This is pr
 				if token.word.lower()[0-len(suff):] == suff:
 					nominalization = True
 					break
-		if token.upos == "PROPN":
+		if token.xpos[:3] == "NNP":
+		#if token.upos == "PROPN":
 			if token.word.lower() in titles:
 				token.cat2 = "title"
 			else:
@@ -148,22 +178,22 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 		#print(token.word)
 		if token.word[-2:].lower() == "ly":
 			token.cat2 = "ly"
-		if token.deprel == "advmod" and token.head.pos_ in ["VERB","AUX"]: #note that copular verbs get "AUX"
-			if token.word.lower() in linking and token.idx < token.head.i: #if the word can be alinking adverb and occurs before the main verb:
+		if token.deprel == "advmod" and sent[token.headidx].xpos[:2] == "VB":
+			if token.word.lower() in linking and token.idx < token.headidx: #if the word can be alinking adverb and occurs before the main verb:
 				token.cat1 = "link"
 			else:
 				token.cat1 = "advl"
-		elif token.deprel == "advmod" and token.head.dep_ == "acomp":
+		elif token.deprel == "advmod" and  sent[token.headidx].deprel == "acomp":
 			token.cat1 = "adjmod"
 
 		#split aux section:
 		for tkn in sent:
 			if tkn.headidx == token.headidx:
 				if tkn.deprel == "aux" and tkn.idx < token.idx:
-					if token.idx < token.headidx and token.head.pos_ == "VERB":
+					if token.idx < token.headidx and sent[token.headidx].xpos[:2] == "VB":
 						token.cat3 = "splaux"
 						break
-	if token.deprel == "prt" and token.head.i < token.idx: #check for particles, make sure they aren't infinitive "to"
+	if token.deprel == "prt" and token.headidx < token.idx: #check for particles, make sure they aren't infinitive "to"
 		token.lxgrtag = "rb"
 		token.cat1 = "prtcle"
 	if token.lxgrtag == "rb" and token.cat1 == None:
@@ -173,7 +203,8 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 	that0_list = "check consider ensure illustrate fear say assume understand hold appreciate insist feel reveal indicate wish decide express follow suggest saw direct pray observe record imagine see think show confirm ask meant acknowledge recognize need accept contend come maintain believe claim verify demonstrate learn hope thought reflect deduce prove find deny wrote read repeat remember admit adds advise compute reach trust yield state describe realize expect mean report know stress note told held explain hear gather establish suppose found use fancy submit doubt felt".split(" ")
 	
 	#don't tag verbs functioning as adjectives as verbs; only tag main verbs
-	if token.upos in ["VERB","AUX"] and token.deprel not in ["amod","acomp","aux","auxpass"]: 
+	if token.xpos[:2] == "VB" and token.deprel not in ["amod","acomp","aux","auxpass"]:
+	#if token.upos in ["VERB","AUX"] and token.deprel not in ["amod","acomp","aux","auxpass"]: 
 		token.lxgrtag = "vbmain"
 		if token.lemma == "be": #need to add "+ NP" frames; need to deal with negation. This is kind of a mess
 			if token.idx +2 <= sent[-1].idx and " ".join([token.lemma,sent[token.idx + 1].word.lower(),sent[token.idx + 2].word.lower()]) in prepVerbList:
@@ -254,7 +285,8 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		
 		if token.cat2 == "nonfinite":
 			### to clause ###
-			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.upos == "PART"]:
+			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO"]:
+			#if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.upos == "PART"]:
 				token.cat6 = "tocls" #probably needs more work
 			### ing clause ###
 			if token.xpos == "VBG":
@@ -269,11 +301,14 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		### cat7 analysis ###
 		#####################
 		if token.cat5 == "compcls":
-			if sent[token.headidx].upos in ["VERB","AUX"] and token.idx != token.headidx:
+			if sent[token.headidx].xpos[:2] == ["VB"] and token.idx != token.headidx:
+			#if sent[token.headidx].upos in ["VERB","AUX"] and token.idx != token.headidx:
 				token.cat7 = "vcomp"
-			elif sent[token.headidx].upos == "ADJ":
+			elif sent[token.headidx].xpos[:2] == "JJ":
+			#elif sent[token.headidx].upos == "ADJ":
 				token.cat7 = "jcomp"
-			elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
+			elif sent[token.headidx].xpos in ["NN","NNS","NNP","NNPS","PRP"]:
+			#elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 				token.cat7 = "ncomp"
 			elif token.deprel == "pcomp":
 				token.cat7 = "incomp"
@@ -412,11 +447,14 @@ def advanced_pronoun(token,sent):	#updated 2022-11-02
 def prepositions(token,sent):
 	if token.deprel == "prep":
 		token.lxgrtag = "in"
-		if sent[token.headidx].upos in ["VERB","AUX"]:
+		if sent[token.headidx].xpos[:2] == "VB":
+		#if sent[token.headidx].upos in ["VERB","AUX"]:
 			token.cat1 = "advl"
-		elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
+		elif sent[token.headidx].xpos in ["NN","NNS","NNP","NNPS","PRP"]:
+		#elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 			token.cat1 = "nmod"
-		elif sent[token.headidx].upos == "ADJ":
+		elif sent[token.headidx].xpos[:2] == "JJ":
+		#elif sent[token.headidx].upos == "ADJ":
 			token.cat1 = "jcomp"
 		else:
 			token.cat1 = "in_othr"
@@ -424,9 +462,11 @@ def prepositions(token,sent):
 def coordinators(token,sent): #takes spacy's definition of "cc"
 	if token.deprel == "cc":
 		token.lxgrtag = "cc"
-		if sent[token.headidx].upos in ["NOUN", "ADJ", "ADV", "PRON", "PROPN", "PART"]:
+		if sent[token.headidx].xpos[:2] in ["NN", "JJ", "RB", "PR", "RP"]:
+		#if sent[token.headidx].upos in ["NOUN", "ADJ", "ADV", "PRON", "PROPN", "PART"]:
 			token.cat1 = "phrs"
-		elif sent[token.headidx].upos in ["VERB","AUX"]:
+		elif sent[token.headidx].xpos[:2] == "VB":
+		#elif sent[token.headidx].upos in ["VERB","AUX"]:
 			ccl = [x.idx for x in sent if x.deprel == "conj" and x.headidx == token.headidx] #and len([y.deprel for y in sent if y.headidx == sent[token.headidx].headidx and y.deprel in ["nsubj","csubj"]]) > 0 ]) != 0:
 			if token.idx == 0: #sentence initial ccs
 				token.cat1 = "cls"
@@ -492,10 +532,13 @@ def that_wh(token,sent): #tweaked version
 #### These functions use the previous functions to conduct tagging and tallying of lexicogramamtical features ###
 
 def preprocess(text): #takes raw text, processes with spacy, then outputs a list of sentences filled with tokenObjects
+	sentCounter = 0
 	output = []
 	doc = nlp(text)
 	for sent in doc.sents:
-		sentl = []
+		sentObj = sentBlank() #blank sentence object
+		sentObj.meta.append("#sentid = " + str(sentCounter))
+		#sentl = []
 		sidx = 0 #within sentence idx
 		firstWord = True #check for first word
 		for token in sent:
@@ -508,41 +551,56 @@ def preprocess(text): #takes raw text, processes with spacy, then outputs a list
 			tok.idx = sidx
 			tok.headidx = tok.headidx - sstartidx #adjust heads from document position to sentence position
 			sidx += 1
-			sentl.append(tok)
-		output.append(sentl)
+			sentObj.tokens.append(tok)
+			#sentl.append(tok)
+		output.append(sentObj)
+		sentCounter += 1
 	return(output)
 
-def tag(sstring): #tags :)
+def tag(input): #tags :)
 	sents = []
-	for sent in preprocess(sstring):
-		for token in sent:
+	if isinstance(input,str) == True:
+		input = preprocess(input)
+	for sent in input:
+	#for sent in preprocess(sstring):
+		for token in sent.tokens:
+			#print(token.idx,token.word,token.lemma,token.deprel,token.headidx)
 			personal_pronouns(token)
-			advanced_pronoun(token,sent)
-			adverbs(token,sent)
+			advanced_pronoun(token,sent.tokens)
+			adverbs(token,sent.tokens)
 			adjectives(token)
 			nouns(token)
-			verbs(token,sent)
-			prepositions(token,sent)
-			coordinators(token,sent)
-			subordinators(token,sent)
+			verbs(token,sent.tokens)
+			prepositions(token,sent.tokens)
+			coordinators(token,sent.tokens)
+			subordinators(token,sent.tokens)
 			determiners(token)
-			that_wh(token,sent)
+			that_wh(token,sent.tokens)
 		sents.append(sent)
 	return(sents)
 
 def printer(loToks):
-	for sent in loToks:
-		for token in sent:
-			print(token.idx, token.word, token.lemma, token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.upos, token.deprel,token.headidx)
+	for sentidx, sent in enumerate(loToks):
+		for x in sent.meta:
+			print(x)
+		for token in sent.tokens:
+			print(token.idx, token.word, token.lemma, token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.deprel,token.headidx)
+			#print(token.idx, token.word, token.lemma, token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.upos, token.deprel,token.headidx)
+		#print(sentidx,len(loToks))
+		if sentidx +1 != len(loToks):
+			print("\n")
 
 def writer(outname,loToks,joiner = "\t"):
 	outf = open(outname,"w")
 	docout = []
 	for sent in loToks:
 		sentout = []
-		for token in sent:
+		for x in sent.meta:
+			sentout.append(x) #add metadata
+		for token in sent.tokens:
 			tokenout = []
-			items = [token.idx,token.word,token.lemma,token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.upos, token.deprel,token.headidx]
+			items = [token.idx,token.word,token.lemma,token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.deprel,token.headidx]
+			#items = [token.idx,token.word,token.lemma,token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.upos, token.deprel,token.headidx]
 			for item in items:
 				if item == None:
 					tokenout.append("")
@@ -555,10 +613,47 @@ def writer(outname,loToks,joiner = "\t"):
 	outf.flush()
 	outf.close()
 
+def readConll(fname):
+	outl = [] #list of sentObjs
+	sents = open(fname,errors = "ignore").read().strip().split("\n\n")
+	for sent in sents:
+		sentObj = sentBlank() #create sentence object instance
+
+		for token in sent.split("\n"):
+			if token[0] == "#":
+				sentObj.meta.append(token)
+				continue
+			else:
+				tokObj = tokenBlank() #create token object instance
+				info = token.split("\t") #presumes tab-delimited file
+				tokObj.idx = int(info[0])-1
+				tokObj.word = info[1]
+				tokObj.lemma = info[2].lower()
+				tokObj.xpos = info[3]
+				#no upos :(
+				tokObj.deprel = info[6]
+				if tokObj.deprel == "root":
+					tokObj.headidx = tokObj.idx
+				else:
+					tokObj.headidx = int(info[5])-1
+				
+				sentObj.tokens.append(tokObj)
+		outl.append(sentObj)
+	return(outl)
+
+#test conll
+conllLoS = tag(readConll("sample_conll/bc-cctv-00-cctv_0000.parse.dep"))
+#printer(conllLoS[:3])
+
 
 ##### Samples/tests
-
-# printer(tag("That this was a tactical decision quickly became apparent.")) #from LGSWE pp. 195
+test = preprocess("That this was a tactical decision quickly became apparent.")
+for sent in test:
+	print(sent.meta[0],[x for x in sent.meta])
+	for token in sent.tokens:
+		print(token.word)
+test[0].tokens
+printer(tag("That this was a tactical decision quickly became apparent.")) #from LGSWE pp. 195
 # printer(tag("They believe that the minimum wage could threaten their jobs."))
 # printer(tag("They believe that is wrong.")) #my own example. "That" is correct in v .05
 # printer(tag("The more important point, he said, was that his party had voted with the Government more often in the last decade than in the previous one."))
