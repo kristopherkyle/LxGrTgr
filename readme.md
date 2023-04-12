@@ -10,7 +10,7 @@ For now, ensure that your Python working directory is the same as the directory 
 ### Import LxGrTgr
 First, import LxGrTgr:
 ```python
-import LxGrTgr_05 as lxgr
+import LxGrTgr_05_03 as lxgr
 ```
 
 ### Tag Strings and Print Output 
