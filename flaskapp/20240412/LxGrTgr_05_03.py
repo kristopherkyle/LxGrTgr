@@ -40,8 +40,8 @@ import re #for regulat expressions
 
 ### spacy
 import spacy #base NLP
-#nlp = spacy.load("en_core_web_sm") #load model
-nlp = spacy.load("en_core_web_trf")  #load model
+nlp = spacy.load("en_core_web_sm") #load model
+#nlp = spacy.load("en_core_web_trf")  #load model
 nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 ######################################################
 
