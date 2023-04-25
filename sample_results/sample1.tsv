@@ -1,14 +1,15 @@
-0	This	this	pro	dem	sg							DT	PRON	nsubj	1
-1	is	be	vbmain	be	pres	simple	active					VBZ	AUX	ROOT	1
-2	a	a	dt	art								DT	DET	det	5
-3	very	very	rb	othr								RB	ADV	advmod	4
-4	important	important	jj	attr								JJ	ADJ	amod	5
-5	opportunity	opportunity	nn		nom							NN	NOUN	attr	1
-6	that	that	relpro	relpro_that	sg							WDT	PRON	nsubj	8
-7	only	only	rb	advl	ly							RB	ADV	advmod	8
-8	comes	come	vbmain	vblex	pres	simple	active	nmod_cls	thatcls			VBZ	VERB	relcl	5
-9	once	once	rb	advl								RB	ADV	advmod	8
-10	in	in	in	in_othr								IN	ADP	prep	9
-11	a	a	dt	art								DT	DET	det	12
-12	lifetime	lifetime	nn									NN	NOUN	pobj	10
-13	.	.										.	PUNCT	punct	1
+#sentid = 0
+0	This	this		pro	dem	sg							DT	nsubj	1
+1	is	be		vbmain	be	pres	simple	active					VBZ	ROOT	1
+2	a	a		dt	art								DT	det	5
+3	very	very	rb+adjmod|advmod	rb	othr								RB	advmod	4
+4	important	important	attr+nn+premod	jj	attr								JJ	amod	5
+5	opportunity	opportunity		nn		nom							NN	attr	1
+6	that	that		relpro	relpro_that	sg							WDT	nsubj	8
+7	only	only	rb+advl	rb	advl	ly							RB	advmod	8
+8	comes	come	nn+finite+relcl	vbmain	vblex	pres	simple	active	nmod_cls	thatcls	rel		VBZ	relcl	5
+9	once	once	rb+advl	rb	advl								RB	advmod	8
+10	in	in		in	in_othr								IN	prep	9
+11	a	a		dt	art								DT	det	12
+12	lifetime	lifetime		nn									NN	pobj	10
+13	.	.											.	punct	1

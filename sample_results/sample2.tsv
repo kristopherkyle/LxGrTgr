@@ -1,20 +1,22 @@
-0	I	i	pro	1st	sg							PRP	PRON	nsubj	1
-1	like	like	vbmain	vblex	pres	simple	active					VBP	VERB	ROOT	1
-2	pizza	pizza	nn									NN	NOUN	dobj	1
-3	.	.										.	PUNCT	punct	1
+#sentid = 0
+0	I	i		pro	1st	sg							PRP	nsubj	1
+1	like	like		vbmain	vblex	pres	simple	active					VBP	ROOT	1
+2	pizza	pizza		nn									NN	dobj	1
+3	.	.											.	punct	1
 
-0	I	i	pro	1st	sg							PRP	PRON	nsubj	2
-1	also	also	rb	advl								RB	ADV	advmod	2
-2	enjoy	enjoy	vbmain	vblex	pres	simple	active					VBP	VERB	ROOT	2
-3	eating	eat	vbmain	vblex	nonfinite	simple	active		ingcls			VBG	VERB	xcomp	2
-4	it	it	pro	3rd	sg							PRP	PRON	dobj	3
-5	because	because	cs	cos								IN	SCONJ	mark	7
-6	it	it	pro	3rd	sg							PRP	PRON	nsubj	7
-7	gives	give	vbmain	vblex	pres	simple	active	advlcls		causative		VBZ	VERB	advcl	3
-8	me	i	pro	1st	sg							PRP	PRON	dative	7
-9	a	a	dt	art								DT	DET	det	10
-10	reason	reason	nn									NN	NOUN	dobj	7
-11	to	to	to									TO	PART	aux	12
-12	drink	drink	vbmain	vblex	nonfinite	simple	active	nmod_cls	tocls			VB	VERB	relcl	10
-13	beer	beer	nn		nom							NN	NOUN	dobj	12
-14	.	.										.	PUNCT	punct	2
+#sentid = 1
+0	I	i		pro	1st	sg							PRP	nsubj	2
+1	also	also	rb+advl	rb	advl								RB	advmod	2
+2	enjoy	enjoy		vbmain	vblex	pres	simple	active					VBP	ROOT	2
+3	eating	eat	vb+ingcls	vbmain	vblex	nonfinite	simple	active	compcls	ingcls	vcomp		VBG	xcomp	2
+4	it	it		pro	3rd	sg							PRP	dobj	3
+5	because	because		cs	cos								IN	mark	7
+6	it	it		pro	3rd	sg							PRP	nsubj	7
+7	gives	give	cnd|cos|con+cls	vbmain	vblex	pres	simple	active	advlcls		causative		VBZ	advcl	3
+8	me	i		pro	1st	sg							PRP	dative	7
+9	a	a		dt	art								DT	det	10
+10	reason	reason		nn									NN	dobj	7
+11	to	to		to									TO	aux	12
+12	drink	drink	nn+tocls+relcl	vbmain	vblex	nonfinite	simple	active	nmod_cls	tocls	rel		VB	relcl	10
+13	beer	beer		nn		nom							NN	dobj	12
+14	.	.											.	punct	2
