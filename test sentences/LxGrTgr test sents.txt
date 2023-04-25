@@ -1,0 +1,203 @@
+##### Samples/tests
+
+## previous examples -- KK
+# printer(tag("That this was a tactical decision quickly became apparent.")) #from LGSWE pp. 195
+# printer(tag("They believe that the minimum wage could threaten their jobs."))
+# printer(tag("They believe that is wrong.")) #my own example. "That" is correct in v .05
+# printer(tag("The more important point, he said, was that his party had voted with the Government more often in the last decade than in the previous one."))
+# printer(tag("Understanding how a planet generates and gets rid of heat is essential if we are to understand how the planet works.")) #how isn't right - parsing error for head of "how"
+# printer(tag("I don't know how they did that."))
+
+
+
+
+
+## more examples added from LGSWE -- HS
+
+
+## main tag: nn
+
+### nominalization
+# printer (tag("Many of those who were interested in investing were still not aware of the importance of pre-registering.")) #importance p.970
+
+### proper
+# printer (tag("I haven't been in touch with the Joneses for ages."))  #p.247
+
+### title?
+# printer (tag("A little group of people had gathered by Mrs. Millings to watch the police activities on the foreshore.")) #p.199
+# printer (tag(""A fine thing," Dr. Saito remarked to me.")) #p.469
+
+
+## main tag: jj
+
+### attributive
+# printer (tag("It's rustic, knotty pine with a huge fireplace.")) #p.510 #rustic, knotty, huge
+# printer (tag("One of the most important ways of achieving this is by the regular and thorough implementation of planned disinfection programmes in all livestock units.")) #p.510 #important, regular, thorough, planned
+
+### predicative
+# printer (tag("It would be easier, quicker, and cheaper.")) #p.515 #easier, quicker, cheaper
+# printer (tag("The fans became restless and the soccer grapevine was alive with names of likely successors to Mr. Stringer.")) #p.515 #restless, alive
+
+
+## main tag: rb
+
+### advl 
+# printer (tag("They sang boomingly well.")) #p.102 #boomingly, well 
+
+### adjmod (amplifier)
+# printer (tag("Our dentist was very good.")) #p.554 #very
+# printer (tag("We both thought you were marvellous. And so kind to let us come to the party afterwards.")) #p.554 #so 
+# printer (tag("Most will be extremely cautious until new case law defines the extent of the new Act.")) #p.554 #extremely
+
+### prtcle 
+# printer (tag("Bring in the stool from the bathroom.")) #p.78 #in 
+# printer (tag("It swallowed up the two men.")) #p.78 #up
+
+
+
+## main tag: vbmain
+
+### compcls
+# printer (tag("We shall shortly see that pragmatism is less radical than this description makes it seem.")) #p.386
+
+#### causative verbs with following complement clauses
+# printer (tag("What caused you to be ill?")) #p.363 
+# printer (tag("This would help protest Jaguar from fluctuations in the dollar.")) #p.363 
+# printer (tag("Police and council leaders agreed to let a court decide the fate of the trees.")) #p.363 
+
+
+### advlcls 
+# printer (tag("When the units are sold, the city expects to recover all but its $825,000 initial investment.")) #pp.818-819
+# printer (tag("And wherever you go there's such a ordeal.")) #pp.818-819
+# printer (tag("He smoothed the short sprays 4 leathery green leaves between his finger and thumb as if their texture might tell him something.")) #pp.818-819
+
+
+### passive 
+# printer (tag("Andy may be adopted or something like that.")) #pp.935-936
+# printer (tag("No, you don't pass or fail. You get given marks.")) #pp.935-936
+# printer (tag("We know with some confidence that if greenhouse gases continue to be emitted in their present quantities, we will experience unprecedented rates of sea-level rise.")) #pp.935-936 #to be emitted
+
+# printer (tag("As recently as last year, Anderson was asked by the Ugandan government to advise on the restructuring of the civil service there, following the turmoil of recent years.")) pp.935-936 #asked
+
+
+
+## main tag: vbaux
+
+### possibility
+# printer (tag("Also he may have had quite a job finding it.")) #pp.500-501 #may?
+
+### necessity
+# printer (tag("If the new tape is genuine, then the phone call made by Prince Charles must have been deliberately bugged.")) #pp.500-501 #must
+
+
+### predictive
+# printer (tag("Next season, only one team will be going down from the First Division.")) #pp.500-501 #will
+# printer (tag("We shall be campaigning for the survival of local government in Cleveland.")) #pp.500-501 #shall
+# printer (tag("She's supposed to be coming in.")) #pp.500-501 #supposed?
+
+### semi-modals?
+# printer (tag("He had to call the police.")) #p.484 #had to
+# printer (tag("I think the teachers are gonna have to be there.")) #p.484
+
+
+
+## main tag: in
+
+# printer (tag("From behind the wire fencing, a uniformed guard eyes us with binoculars.")) #p.104 #from, behind
+# printer (tag("He worked in a shop - probably at that time.")) #p.104 #in, at
+
+
+## main tag: cc
+
+### clausal
+# printer (tag("Just read up on it and let us know.")) #clausal or phrasal? #p.79 #and
+# printer (tag("I don't want to speak too soon, but I think I have been fairly consistent this season.")) #p.79 #but
+
+### phrasal
+# printer (tag("At the end of the day it's just greed and profit to gain.")) #p.79 #and
+# printer (tag("The donkeys did not come back, nor did the eleven men, nor did the helicopter.")) #p.79 #nor
+
+
+# main tag: cs
+
+### conditional
+# printer (tag("If we had moved in then we'd have to spend fifty thousand pound to get it up to scratch.")) #p.86 #if 
+
+### concessive
+# printer (tag("And El-ahrairah knew then that although he would not be mocked, yet Frith was his friend.")) #p.86 #although
+
+### causative?
+# printer (tag("She should have jumped on it because it would be a way for her to make friends and meet people.")) #p.819 #because 
+
+### other?
+# printer (tag("As the castle was frozen, so were they; as the castle was slowly crumbling but they stayed in their stasis, so their hopes, their chances decayed.")) #p.819 #as
+# printer (tag("He smoothed the short sprays 4 leathery green leaves between his finger and thumb as if their texture might tell him something.")) #p.819 #as
+
+
+
+# main tag: dt 
+
+### demonstrative
+# printer (tag("This Julian person we're referring to is, is a complete and utter cripple.")) #p.273  #this 
+# printer (tag("They started at nursery that summer.")) #p.273 #that
+
+### possessive
+# printer (tag("She didn't want to spoil her shoes.")) #p.271 #her 
+# printer (tag("So it ended up by his going off with her.")) #p.125 #his? 
+
+
+
+## main tag: pro 
+
+### personal pronouns
+# printer(tag("I must tell you about it.")) #p.70
+
+### demonstrative pronouns
+# printer(tag("Loot at this! Have you seen those?"))  #p.70
+
+### reflexive pronouns
+# printer(tag("I hurt myself. She came to herself after a few minutes.")) #p.70
+ 
+### reciprocal pronouns
+# printer(tag("They clung to each other.")) #p.70
+
+### possessive
+# printer(tag("I brought my camera. Did you bring yours?")) #p.70
+
+### indefinite
+# printer(tag("Everything in there is old. I suppose somebody got hurt.")) #p.70 #pro-others
+
+### relative
+# printer(tag("My sister, whom you met yesterday, owns a house which was built in the eighteenth century.")) #p.70
+
+### interrogative 
+# printer(tag("Who wrote this letter?")) #p.70
+
+
+### dummy subjects 
+# printer(tag("It was not as cold as on the previous night.")) #p.125 #no tag for catching dummy 'it'? 
+# printer(tag("By the time you get back it's nine o'clock.")) #p.125
+
+
+## main tag: comp 
+
+### wh-words 
+# printer (tag("I don't know what I would have done without her.")) #p.88 #what
+# printer (tag("Vada wonders where she stands in her father's affections.")) #p.88 #where
+
+### that-clause
+# printer (tag("These figures lead to an expectation that the main application area would be in the office environments.")) #pp.645-646 #that
+# printer (tag("It was a pleasing thought, that I might soon be moving in more exalted circles.")) #pp.645-646
+
+
+## main tag: relpro
+
+### wh-words 
+# printer (tag("There are plenty of existing owners who are already keen to make the move.")) #p.609 #who
+# printer (tag("There was a slight, furtive boy whom no one knew.")) #p.609 #whom
+# printer (tag("He was born in another age, the age when we played not for a million dollars in prize money.")) #p.609 #when
+
+### that 
+# printer (tag("She came up with all sorts of things that she would like for the new development.")) #p.612
+# printer (tag("You have to pay for it in the year that you don't make any profit.")) #p.612
+
