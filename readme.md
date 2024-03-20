@@ -5,12 +5,15 @@ LxGrTgr was developed using Spacy (version 3.4; en_core_web_trf model). Users wi
 
 Once you have Spacy installed and have dowloaded the en_core_web_trf model, you can use LxGrTgr (in the future you will be able to download this from pypi using pip).
 
-For now, ensure that your Python working directory is the same as the directory in which the LxGrTgr script is. 
+For now, ensure that your Python working directory is the same as the directory in which the LxGrTgr script is.
+
+### Demo site
+In addition to using the code below, a <a href="https://kristopherkyle.pythonanywhere.com/" target="_blank">demo web app</a> (which uses a faster but slightly less accurate NLP backend) is also available.
 
 ### Import LxGrTgr
 First, import LxGrTgr:
 ```python
-import LxGrTgr_05_07 as lxgr
+import LxGrTgr_05_10 as lxgr
 ```
 
 ### Tag Strings and Print Output 
@@ -54,7 +57,7 @@ lxgr.writer("sample_results/sample2.tsv",sample2)
 insert things here
 
 ## Tag Descriptions
-insert things here
+We are currently developing tag descriptions and detailed annotation guidelines for complexity features. <a href="https://lcr-ads-lab.github.io/LxGrTagger-Documentation/" target="_blank">Click here to access the document</a> (updated/revised weekly)
 
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
