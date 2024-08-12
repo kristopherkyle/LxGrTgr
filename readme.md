@@ -13,7 +13,7 @@ In addition to using the code below, a <a href="https://kristopherkyle.pythonany
 ### Import LxGrTgr
 First, import LxGrTgr:
 ```python
-import LxGrTgr_05_10 as lxgr
+import LxGrTgr_05_27 as lxgr
 ```
 
 ### Tag Strings and Print Output 
@@ -52,9 +52,43 @@ lxgr.writer("sample_results/sample1.tsv",sample1)
 sample2 = lxgr.tag("I like pizza. I also enjoy eating it because it gives me a reason to drink beer.")
 lxgr.writer("sample_results/sample2.tsv",sample2)
 ```
+## Batch Processing Corpora
+Corpora come in all shapes and sizes. By default LxGrTgr presumes that each corpus file is represented as a UTF-8 text file and that all corpus files are in the same folder/directory. 
+
+### Step 1: Tag Corpus Files
+To tag a corpus with LxGrTgr, simply use the `tagFolder()` function, which takes two arguments (targetFolderName, taggedFolderName). Be sure that the taggedFolderName points to an empty folder/directory. 
+
+An additional optional argument (`suff`) can also be used. By default, `suff = ".txt"`. If your corpus filenames end in something other than ".txt", be sure to include the `suff` argument with the correct filename ending. 
+```
+lxgr.tagFolder("folderWithCorpusFiles/","folderWhereTaggedVersionsWillBeWritten/")
+```
+### Step 2: Check and Edit Tagged Corpus Files
+Next, tagging should be checked and edited as appropriate.
+
+### Step 3: Counting Tags
+After checking and editing the tags in your corpus, it is time to get tag counts for each document in your corpus using the `countTagsFolder()` function.
+```
+countTagsFolder(targetDir,tagList = None,suff = ".txt")
+```
+By default, complexity tags are counted. The `countTagsFolder()` function returns a dictionary with filenames as keys and feature counts as values.
+
+```
+sampleCountDictionary = lxgr.countTagsFolder("folderWhereTaggedVersionsWereWritten/")
+```
+### Step 4: Writing Tag Counts to a File
+The `writeCounts()` function can be used to write the results to a file. By default, counts are normed as the incidence per 10,000 words, though this can be changed using the `norming` argument. Raw counts can be obtained by including `normed = False`.
+
+`writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,norming = 10000)`
+
+If the default options are desired, the `writeCounts()` function only needs two arguments - a dictionary of filenames and index counts and a filename for the spreadsheet file:
+
+```
+lxgr.writeCounts(sampleCountDictionary,"sampleOutputFile.txt")
+```
+
 
 ## Future Directions
-insert things here
+Add more functions for random sampling and tag-fixing.
 
 ## Tag Descriptions
 We are currently developing tag descriptions and detailed annotation guidelines for complexity features. <a href="https://lcr-ads-lab.github.io/LxGrTagger-Documentation/" target="_blank">Click here to access the document</a> (updated/revised weekly)
