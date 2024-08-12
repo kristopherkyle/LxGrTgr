@@ -56,9 +56,14 @@ lxgr.writer("sample_results/sample2.tsv",sample2)
 Corpora come in all shapes and sizes. By default LxGrTgr presumes that each corpus file is represented as a UTF-8 text file and that all corpus files are in the same folder/directory. 
 
 ### Step 1: Tag Corpus Files
-To tag a corpus with LxGrTgr, simply use the `tagFolder()` function, which takes two arguments (targetFolderName, taggedFolderName). Be sure that the taggedFolderName points to an empty folder/directory. 
+To tag a corpus with LxGrTgr, simply use the `tagFolder()` function.
+
+`tagFolder(targetDir,outputDir,suff = ".txt")`
+
+`targetDir` is the folder/directory where your corpus files are. `outputDir` is the folder where the tagged versions of your corpus files will be written.
 
 An additional optional argument (`suff`) can also be used. By default, `suff = ".txt"`. If your corpus filenames end in something other than ".txt", be sure to include the `suff` argument with the correct filename ending. 
+
 ```
 lxgr.tagFolder("folderWithCorpusFiles/","folderWhereTaggedVersionsWillBeWritten/")
 ```
