@@ -66,7 +66,7 @@ To tag a corpus with LxGrTgr, simply use the `tagFolder()` function.
 
 An additional optional argument (`suff`) can also be used. By default, `suff = ".txt"`. If your corpus filenames end in something other than ".txt", be sure to include the `suff` argument with the correct filename ending. 
 
-```
+```python
 lxgr.tagFolder("folderWithCorpusFiles/","folderWhereTaggedVersionsWillBeWritten/")
 ```
 ### Step 2: Check and Edit Tagged Corpus Files
@@ -74,7 +74,7 @@ Next, tagging should be checked and edited as appropriate.
 
 ### Step 3: Counting Tags
 After checking and editing the tags in your corpus, it is time to get tag counts for each document in your corpus using the `countTagsFolder()` function.
-```
+```python
 countTagsFolder(targetDir,tagList = None,suff = ".txt")
 ```
 By default, complexity tags are counted. The `countTagsFolder()` function returns a dictionary with filenames as keys and feature counts as values.
@@ -89,7 +89,7 @@ The `writeCounts()` function can be used to write the results to a file. By defa
 
 If the default options are desired, the `writeCounts()` function only needs two arguments - a dictionary of filenames and index counts and a filename for the spreadsheet file:
 
-```
+```python
 lxgr.writeCounts(sampleCountDictionary,"sampleOutputFile.txt")
 ```
 
