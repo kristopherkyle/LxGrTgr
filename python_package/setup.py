@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="lxgrtgr",
-    version="0.5.30",
+    version="0.5.31",
     author="Kristopher Kyle",
     author_email="kristopherkyle1@gmail.com",
     description="Lexicogrammatical tagging and tag counting tool",
