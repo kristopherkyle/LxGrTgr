@@ -1,11 +1,13 @@
 # Lexicogrammatical Tagger (LxGrTgr)
 Note that LxGrTgr is currently being beta tested and should not be used in research. Once the beta testing concludes, this message will change.
 ## Quick Start Guide
-LxGrTgr was developed using Spacy (version 3.4; en_core_web_trf model). Users will need to follow the instructions on [Spacy's website](https://spacy.io/usage) to download Spacy for your specific system and the en_core_web_trf model.
+LxGrTgr was developed using Spacy (version 3.5; en_core_web_trf model). Users will need to follow the instructions on [Spacy's website](https://spacy.io/usage) to download Spacy for your specific system and the en_core_web_trf model.
 
-Once you have Spacy installed and have dowloaded the en_core_web_trf model, you can use LxGrTgr (in the future you will be able to download this from pypi using pip).
+Once you have Spacy installed and have dowloaded the en_core_web_trf model, you can use LxGrTgr. To install LxGrTgr, use pip:
 
-For now, ensure that your Python working directory is the same as the directory in which the LxGrTgr script is.
+```zsh
+pip install lxgrtgr
+```
 
 ### Demo site
 In addition to using the code below, a <a href="https://kristopherkyle.pythonanywhere.com/" target="_blank">demo web app</a> (which uses a faster but slightly less accurate NLP backend) is also available.
@@ -13,7 +15,7 @@ In addition to using the code below, a <a href="https://kristopherkyle.pythonany
 ### Import LxGrTgr
 First, import LxGrTgr:
 ```python
-import LxGrTgr_05_27 as lxgr
+import lxgrtgr as lxgr
 ```
 
 ### Tag Strings and Print Output 
