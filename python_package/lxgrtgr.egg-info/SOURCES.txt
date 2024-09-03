@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+setup.py
+lxgrtgr.egg-info/PKG-INFO
+lxgrtgr.egg-info/SOURCES.txt
+lxgrtgr.egg-info/dependency_links.txt
+lxgrtgr.egg-info/requires.txt
+lxgrtgr.egg-info/top_level.txt

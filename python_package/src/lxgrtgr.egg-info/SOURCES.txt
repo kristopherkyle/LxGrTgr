@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+setup.py
+src/lxgrtgr/__init__.py
+src/lxgrtgr/lxgrtgr.py
+src/lxgrtgr/nom_stop_list_edited.txt
+src/lxgrtgr/phrasalVerbList.txt
+src/lxgrtgr/prepVerbList.txt
+src/lxgrtgr.egg-info/PKG-INFO
+src/lxgrtgr.egg-info/SOURCES.txt
+src/lxgrtgr.egg-info/dependency_links.txt
+src/lxgrtgr.egg-info/requires.txt
+src/lxgrtgr.egg-info/top_level.txt

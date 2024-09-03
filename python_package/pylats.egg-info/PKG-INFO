@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Name: pylats
+Version: 0.37
+Summary: Text preprocessing for downstream linguistic analyses
+Home-page: https://github.com/LCR-ADS-Lab/pylats
+Author: Kristopher Kyle
+Author-email: kristopherkyle1@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
