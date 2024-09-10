@@ -26,20 +26,21 @@ sample1 = lxgr.tag("This is a very important opportunity that only comes once in
 lxgr.printer(sample1)
 ```
 ```
-0 This this None pro dem sg None None None None None None DT nsubj 1
-1 is be None vbmain be pres simple active None None None None VBZ ROOT 1
-2 a a None dt art None None None None None None None DT det 5
-3 very very rb+adjmod|advmod rb othr None None None None None None None RB advmod 4
-4 important important attr+nn+premod jj attr None None None None None None None JJ amod 5
-5 opportunity opportunity None nn None nom None None None None None None NN attr 1
-6 that that None relpro relpro_that sg None None None None None None WDT nsubj 8
-7 only only rb+advl rb advl ly None None None None None None RB advmod 8
-8 comes come nn+finite+relcl vbmain vblex pres simple active nmod_cls thatcls rel None VBZ relcl 5
-9 once once rb+advl rb advl None None None None None None None RB advmod 8
-10 in in None in in_othr None None None None None None None IN prep 9
-11 a a None dt art None None None None None None None DT det 12
-12 lifetime lifetime None nn None None None None None None None None NN pobj 10
-13 . . None None None None None None None None None None . punct 1
+#sentid = 0
+0 This this None
+1 is be None
+2 a a None
+3 very very rb+jjrbmod
+4 important important attr+npremod
+5 opportunity opportunity None
+6 that that None
+7 only only rb+advl
+8 comes come finitecls+rel
+9 once once rb+advl
+10 in in None
+11 a a None
+12 lifetime lifetime None
+13 . . None
 ```
 
 These commands can also be combined for efficiency's sake:
