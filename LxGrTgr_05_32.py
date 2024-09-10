@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.33"
-version_notes = "0.0.5.33 - bug fixes"
+version = "0.0.5.32"
+version_notes = "0.0.5.32 - Add printer"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -43,13 +43,14 @@ from importlib_resources import files #for opening package files - need to inclu
 ### spacy
 print("Importing Spacy")
 import spacy #base NLP
-print("Spacy Successfully Loaded...")
+print("Spacy Successfully Loaded")
 # from spacy.tokens import Doc
 # from spacy.language import Language
 #nlp = spacy.load("en_core_web_sm") #load model
 print("Loading Transformer Model")
 nlp = spacy.load("en_core_web_trf")  #load model
 print("Transformer Model Successfully Loaded")
+nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
 
@@ -68,12 +69,8 @@ print("Transformer Model Successfully Loaded")
 ######################################################
 
 ### Load lists, etc. #################################
-
-# nominal_stop = files('').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
-# prepVerbList = files('').joinpath('prepVerbList.txt').read_text().strip().split("\n")
-
-nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
-prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
+nominal_stop = files('lists_LGR').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
+prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
 # prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
