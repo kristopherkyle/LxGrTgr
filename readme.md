@@ -44,7 +44,7 @@ Then, strings can be tagged and printed:
 
 ```python
 sample1 = lxgr.tag("This is a very important opportunity that only comes once in a lifetime.")
-lxgr.printer(sample1)
+lxgr.printer(sample1) #by default, the format is: token_id,text,lemma,complexity_tag
 ```
 ```
 #sentid = 0
