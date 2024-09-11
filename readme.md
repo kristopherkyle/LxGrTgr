@@ -1,9 +1,30 @@
 # Lexicogrammatical Tagger (LxGrTgr)
 Note that LxGrTgr is currently being beta tested and should not be used in research. Once the beta testing concludes, this message will change.
 ## Quick Start Guide
-LxGrTgr was developed using Spacy (version 3.5; en_core_web_trf model). Users will need to follow the instructions on [Spacy's website](https://spacy.io/usage) to download Spacy for your specific system and the en_core_web_trf model.
+LxGrTgr was developed using Spacy (version 3.5; en_core_web_trf model). Users will need to follow the instructions on <a href="https://spacy.io/usage" target="_blank">Spacy's website</a> to download Spacy for your specific system and the en_core_web_trf model.
 
-Once you have Spacy installed and have dowloaded the en_core_web_trf model, you can use LxGrTgr. To install LxGrTgr, use pip:
+Before installing LxGrTgr, it is helpful to verify that Spacy is functioning correctly. You can do so by running the following code in Python:
+
+```python
+import spacy
+nlp = spacy.load("en_core_web_trf")  #load model
+doc = nlp("This is a sample sentence.") #process a sentence
+for token in doc:
+	print(token.text,token.lemma_,token.pos_,token.dep_)
+```
+
+Running this code should result in the following output:
+
+```
+This this PRON nsubj
+is be AUX ROOT
+a a DET det
+sample sample NOUN compound
+sentence sentence NOUN attr
+. . PUNCT punct
+```
+
+Once you have successfully installed Spacy have dowloaded the en_core_web_trf model, you can use LxGrTgr. To install LxGrTgr, use pip:
 
 ```zsh
 pip install lxgrtgr
@@ -52,7 +73,7 @@ lxgr.printer(lxgr.tag("This is a very important opportunity that only comes once
 Output can also be written to a file:
 ```python
 lxgr.writer("sample_results/sample1.tsv",sample1)
-sample2 = lxgr.tag("I like pizza. I also enjoy eating it because it gives me a reason to drink beer.")
+sample2 = lxgr.tag("I like pizza. I also enjoy eating it because it gives me a reason to drink a tasty beverage.")
 lxgr.writer("sample_results/sample2.tsv",sample2)
 ```
 ## Batch Processing Corpora
