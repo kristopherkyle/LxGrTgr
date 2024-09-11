@@ -1,7 +1,7 @@
 # Lexicogrammatical Tagger (LxGrTgr)
 Note that LxGrTgr is currently being beta tested and should not be used in research. Once the beta testing concludes, this message will change.
 ## Quick Start Guide
-LxGrTgr was developed using Spacy (version 3.5; en_core_web_trf model). Users will need to follow the instructions on <a href="https://spacy.io/usage" target="_blank">Spacy's website</a> to download Spacy for your specific system and the en_core_web_trf model. Note that if you are new to Python, we suggest starting with the <a href="https://www.anaconda.com/download" target="_blank">Anaconda distribution of Python</a> and using <a href="https://code.visualstudio.com/" target="_blank">Visual Studio Code</a>.
+LxGrTgr was developed using Spacy (version 3.5; en_core_web_trf model). Users will need to follow the instructions on <a href="https://spacy.io/usage" target="_blank">Spacy's website</a> to download Spacy for your specific system and the en_core_web_trf model. Note that if you are new to Python, we suggest starting with the <a href="https://www.anaconda.com/download" target="_blank">Anaconda distribution of Python</a> and using <a href="https://code.visualstudio.com/" target="_blank">Visual Studio Code</a> as your code editor.
 
 Before installing LxGrTgr, it is helpful to verify that Spacy is functioning correctly. You can do so by running the following code in Python:
 
