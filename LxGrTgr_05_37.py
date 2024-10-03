@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.35"
-version_notes = "0.0.5.35 - update ncomp identification"
+version = "0.0.5.37"
+version_notes = "0.0.5.37 - work on wh+incomp"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -291,7 +291,10 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		if token.deprel in ["ccomp","csubj","pcomp","xcomp"]: 
 			token.cat5 = "compcls"
 		elif token.deprel == "advcl":
-			token.cat5 = "advlcls"
+			if sent[token.headidx].xpos[:2] in ["JJ"]:
+				token.cat5 = "jmod_cls"
+			else:
+				token.cat5 = "advlcls"
 		elif token.deprel in ["relcl"]:
 			token.cat5 = "nmod_cls"
 		elif token.deprel in ["acl"]: #updated 2024-10-01
@@ -317,12 +320,12 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 
 		### wh clause: ###
 		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
-			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0:
+			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
 				token.cat6 = "whcls"
 		
 		if token.cat2 == "nonfinite":
 			### to clause ###
-			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO" and sent[x.idx-1].lemma not in ["seem","have","need","want","order"]]:
+			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO"]: #and sent[x.idx-1].lemma not in ["seem","have","need","want","order"] Doug didn't like these as semi-modals
 			#if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.upos == "PART"]:
 				token.cat6 = "tocls" #probably needs more work
 			### ing clause ###
@@ -346,8 +349,12 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 			#if sent[token.headidx].upos in ["VERB","AUX"] and token.idx != token.headidx:
 				token.cat7 = "vcomp"
 			elif sent[token.headidx].xpos[:2] == "JJ":
-			#elif sent[token.headidx].upos == "ADJ":
-				token.cat7 = "jcomp"
+				if "so" in [x.word.lower() for x in sent if x.headidx == token.headidx and x.idx < token.idx]:
+				# if token.headidx > 0 and sent[token.headidx-1].word.lower() in ["so"]:
+					token.cat7 = "jcomp+comparative"
+				else:
+					token.cat7 = "jcomp"
+
 			elif sent[token.headidx].xpos in ["NN","NNS","NNP","NNPS","PRP"]:
 			#elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 				token.cat7 = "ncomp"
@@ -361,7 +368,11 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 				if sent[token.headidx].upos in ["NOUN","PROPN","PRON"]: #this may be too restrictive; updated 20241001
 					token.cat7 = "ncomp"
 		if token.cat5 in ["jmod_cls"] and sent[token.headidx].xpos[:2] == "JJ":
-			token.cat7 = "jcomp"
+			if "so" in [x.word.lower for x in sent if x.headidx == token.headidx and x.idx < token.idx]:
+			# if token.headidx > 0 and sent[token.headidx-1].word.lower() in ["so"]:
+				token.cat7 = "jcomp+comparative"
+			else:
+				token.cat7 = "jcomp"
 		
 		markL = [x.word.lower() for x in sent if x.headidx == token.idx and x.deprel == "mark"] #list of subordinators
 		if len(markL) != 0:
@@ -760,7 +771,9 @@ def semiModalAdjust(token,sent): #adjust tags based on semimodals
 		semModalBeL = ["be supposed to","be going to"]
 		semModalAboutTo = ["be about to"]
 		semModalUsedTo = ["used to"]
-		#test longer sequences first:
+		#Need to add rules to deal with passive constructions
+
+		#test longer sequences before shorter ones:
 		if token.idx >= 3:
 			modTestL = sent[token.idx-3:token.idx]
 			modTestStr = " ".join([x.word.lower() for x in modTestL])
@@ -992,6 +1005,21 @@ def readConll(fname):
 #test conll
 #conllLoS = tag(readConll("sample_conll/bc-cctv-00-cctv_0000.parse.dep"))
 #printer(conllLoS[:3])
+
+### Tests on 2024-10-03
+#v37
+printer(tag("If you want to work with something big, that's okay."),verbose = True)
+printer(tag("I'm going to help her, it will be so much fun."),verbose = True)
+printer(tag("keep in mind that we are going to talk about is very much in flux in what people believe."),verbose = True)
+
+#v36
+printer(tag("So we need to make sure that we understand."),verbose = True)
+
+printer(tag("He was so hungry that he ate a cow."),verbose = True) #works
+printer(tag("He was so immensely hungry that he ate a cow."),verbose = True)#works
+
+printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to be defeated."),verbose = True)
+printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to die."),verbose = True)
 
 ### Tests on 2024-10-01
 #printer(tag("They can generally accumulate enough that it never becomes an issue ."),verbose = True)
