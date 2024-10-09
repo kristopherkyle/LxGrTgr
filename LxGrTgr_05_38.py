@@ -27,7 +27,7 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 """
 ### imports ####################################
 version = "0.0.5.38"
-version_notes = "0.0.5.38 - work on ingcls+rel"
+version_notes = "0.0.5.38 - work on ingcls+rel + xtrapos+tocls+jcomp"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -632,7 +632,7 @@ def complexity(token,sent):
 			token.cxtag = "whcls+vcomp"
 	
 	#updated 2024-02-14
-	if token.cxtag in ["thatcls+vcomp","whcls+vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx]:	#could be simpler/clearer to also identify "it" as the nsubject	
+	if token.cxtag in ["thatcls+vcomp","whcls+vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]:	#could be simpler/clearer to also identify "it" as the nsubject	
 		token.cxtag = "xtrapos+thatcls+jcomp"
 		token.cat7 = "jcomp"
 	
@@ -693,7 +693,7 @@ def complexity(token,sent):
 		token.cxtag = "tocls+ncomp"
 	
 	if token.cat5 in ["compcls"] and token.cat6 in ["tocls"]: 
-			if token.cat7 in ["jcomp", "vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [[x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]]: #the "jcomp" might not be necessary
+			if token.cat7 in ["jcomp", "vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]: #the "jcomp" might not be necessary
 				token.cxtag = "xtrapos+tocls+jcomp"
 			elif token.cat7 in ["jcomp"]:
 				token.cxtag = "tocls+jcomp"
@@ -1012,23 +1012,29 @@ def readConll(fname):
 #conllLoS = tag(readConll("sample_conll/bc-cctv-00-cctv_0000.parse.dep"))
 #printer(conllLoS[:3])
 
-### Tests on 2024-10-08
-printer(tag("matter seeing those problems again, and that's just one, one set of problems."),verbose = True)
+### Tests on 2024-10-09
+# printer(tag("But it is a reminder just how blinkered abortionists can be, on the one hand, and of how determined pro-abortionists are to convince women to talk about their abortions."),verbose = True)
+# printer(tag("It's crazy to try that."),verbose = True)
+# printer(tag("It is evident that the Marxist perspective has been an enormous intellectual and political force."),verbose = True)
+# printer(tag("I am sad that the Marxist perspective has been an enormous intellectual and political force."),verbose = True)
 
-### Tests on 2024-10-03
-#v37
-printer(tag("If you want to work with something big, that's okay."),verbose = True)
-printer(tag("I'm going to help her, it will be so much fun."),verbose = True)
-printer(tag("keep in mind that we are going to talk about is very much in flux in what people believe."),verbose = True)
+# ### Tests on 2024-10-08
+# printer(tag("matter seeing those problems again, and that's just one, one set of problems."),verbose = True)
+
+# ### Tests on 2024-10-03
+# #v37
+# printer(tag("If you want to work with something big, that's okay."),verbose = True)
+# printer(tag("I'm going to help her, it will be so much fun."),verbose = True)
+# printer(tag("keep in mind that we are going to talk about is very much in flux in what people believe."),verbose = True)
 
 #v36
-printer(tag("So we need to make sure that we understand."),verbose = True)
+# printer(tag("So we need to make sure that we understand."),verbose = True)
 
-printer(tag("He was so hungry that he ate a cow."),verbose = True) #works
-printer(tag("He was so immensely hungry that he ate a cow."),verbose = True)#works
+# printer(tag("He was so hungry that he ate a cow."),verbose = True) #works
+# printer(tag("He was so immensely hungry that he ate a cow."),verbose = True)#works
 
-printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to be defeated."),verbose = True)
-printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to die."),verbose = True)
+# printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to be defeated."),verbose = True)
+# printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to die."),verbose = True)
 
 ### Tests on 2024-10-01
 #printer(tag("They can generally accumulate enough that it never becomes an issue ."),verbose = True)
