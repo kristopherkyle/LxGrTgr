@@ -215,7 +215,8 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 				token.cat1 = "advl"
 		elif token.deprel == "advmod" and  sent[token.headidx].deprel in ["acomp","amod"]: #amod added 20240710
 			token.cat1 = "adjmod"
-
+		#need to add additional criteria for "advl" here, but also need to exclude multi-word adverbs
+		
 		#split aux section:
 		for tkn in sent:
 			if tkn.headidx == token.headidx:
