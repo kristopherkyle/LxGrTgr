@@ -26,30 +26,26 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.41"
-version_notes = "0.0.5.41 - Fix a previous over-correction"
+version = "0.0.5.26"
+version_notes = "0.0.5.26 - Functionality updates"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
-# "0.0.5.35 - add semi-modals"
+
 import glob #for finding all filenames in a folder
 import os #for making folders
 # from xml.dom import minidom #for pretty printing
 # import xml.etree.ElementTree as ET #for xml parsing
 from random import sample #for random samples
 import re #for regulat expressions
-from importlib_resources import files #for opening package files - need to include in package dependencies
+#from lexical_diversity import lex_div as ld #for lexical diversity. Should probably upgrade to TAALED
 
 ### spacy
-print("Importing Spacy")
 import spacy #base NLP
-print("Spacy Successfully Loaded")
-# from spacy.tokens import Doc
-# from spacy.language import Language
-#nlp = spacy.load("en_core_web_sm") #load model
-print("Loading Transformer Model")
-nlp = spacy.load("en_core_web_trf")  #load model
-print("Transformer Model Successfully Loaded")
+from spacy.tokens import Doc
+from spacy.language import Language
+nlp = spacy.load("en_core_web_sm") #load model
+#nlp = spacy.load("en_core_web_trf")  #load model
 nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
@@ -69,13 +65,10 @@ nlp.max_length = 1728483 #allow more characters to be processed than default. Th
 ######################################################
 
 ### Load lists, etc. #################################
-nominal_stop = files('lists_LGR').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
-prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
-# os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
-# nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
-# prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
-#phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
+nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
+prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
+phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
 ##########################################
 
 ### Utility Functions ####################
@@ -192,7 +185,6 @@ def adjectives(token):	#2022-11-22
 			token.cat1 = "pred"
 		elif token.deprel == "amod":
 			token.cat1 = "attr"
-		#To Do: Add code to catch coordinated adjectives (spacy represents this as a "conj" chain)
 		#gerundial or participial?
 		if token.xpos == "VBG": #we may have to rely on morphology here.
 			token.cat2 = "ing"
@@ -210,14 +202,13 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 		if token.word[-2:].lower() == "ly":
 			token.cat2 = "ly"
 		if token.deprel == "advmod" and sent[token.headidx].xpos[:2] == "VB":
-			if token.word.lower() in linking and token.idx < token.headidx: #if the word can be a linking adverb and occurs before the main verb:
+			if token.word.lower() in linking and token.idx < token.headidx: #if the word can be alinking adverb and occurs before the main verb:
 				token.cat1 = "link"
 			else:
 				token.cat1 = "advl"
 		elif token.deprel == "advmod" and  sent[token.headidx].deprel in ["acomp","amod"]: #amod added 20240710
 			token.cat1 = "adjmod"
-		#need to add additional criteria for "advl" here, but also need to exclude multi-word adverbs
-		
+
 		#split aux section:
 		for tkn in sent:
 			if tkn.headidx == token.headidx:
@@ -293,17 +284,9 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		if token.deprel in ["ccomp","csubj","pcomp","xcomp"]: 
 			token.cat5 = "compcls"
 		elif token.deprel == "advcl":
-			if sent[token.headidx].xpos[:2] in ["JJ"]:
-				token.cat5 = "jmod_cls"
-			else:
-				token.cat5 = "advlcls"
-		elif token.deprel in ["relcl"]:
+			token.cat5 = "advlcls"
+		elif token.deprel in ["relcl","acl"]:
 			token.cat5 = "nmod_cls"
-		elif token.deprel in ["acl"]: #updated 2024-10-01
-			if sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
-				token.cat5 = "nmod_cls"
-			elif sent[token.headidx].xpos[:2] in ["JJ"]:
-				token.cat5 = "jmod_cls"
 		# elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 		# 	token.cat5 = "nmod_cls"
 
@@ -317,17 +300,17 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 				token.cat6 = "thatcls"
 
 		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel == "mark"]:
-			if token.cat5 in ["compcls","jmod_cls"]:
+			if token.cat5 in ["compcls"]:
 				token.cat6 = "thatcls"
 
 		### wh clause: ###
 		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
-			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
+			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0:
 				token.cat6 = "whcls"
 		
 		if token.cat2 == "nonfinite":
 			### to clause ###
-			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO" and sent[x.idx-1].lemma not in ["order"]]: #and sent[x.idx-1].lemma not in ["seem","have","need","want","order"] Doug didn't like these as semi-modals - kept in "order" to catch "in order to"
+			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO" and sent[x.idx-1].lemma not in ["seem","have","need","want","order"]]:
 			#if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.upos == "PART"]:
 				token.cat6 = "tocls" #probably needs more work
 			### ing clause ###
@@ -351,12 +334,8 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 			#if sent[token.headidx].upos in ["VERB","AUX"] and token.idx != token.headidx:
 				token.cat7 = "vcomp"
 			elif sent[token.headidx].xpos[:2] == "JJ":
-				if "so" in [x.word.lower() for x in sent if x.headidx == token.headidx and x.idx < token.idx]:
-				# if token.headidx > 0 and sent[token.headidx-1].word.lower() in ["so"]:
-					token.cat7 = "jcomp+comparative"
-				else:
-					token.cat7 = "jcomp"
-
+			#elif sent[token.headidx].upos == "ADJ":
+				token.cat7 = "jcomp"
 			elif sent[token.headidx].xpos in ["NN","NNS","NNP","NNPS","PRP"]:
 			#elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 				token.cat7 = "ncomp"
@@ -366,15 +345,8 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		if token.cat5 == "nmod_cls": #finish fixing this
 			if token.deprel == "relcl":
 				token.cat7 = "rel"
-			elif token.deprel in ["acl"]:
-				if sent[token.headidx].upos in ["NOUN","PROPN","PRON"]: #this may be too restrictive; updated 20241001
-					token.cat7 = "ncomp"
-		if token.cat5 in ["jmod_cls"] and sent[token.headidx].xpos[:2] == "JJ":
-			if "so" in [x.word.lower for x in sent if x.headidx == token.headidx and x.idx < token.idx]:
-			# if token.headidx > 0 and sent[token.headidx-1].word.lower() in ["so"]:
-				token.cat7 = "jcomp+comparative"
-			else:
-				token.cat7 = "jcomp"
+			elif token.deprel in ["acl"]: #this may be too restrictive
+				token.cat7 = "ncomp"
 		
 		markL = [x.word.lower() for x in sent if x.headidx == token.idx and x.deprel == "mark"] #list of subordinators
 		if len(markL) != 0:
@@ -410,13 +382,8 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		if token.cat5 == "compcls" and token.cat6 not in ["tocls","ingcls","thatcls","whcls"]:
 			quote = False
 			question = False
-			quote_scope = [int(x.idx) for x in sent if x.headidx == token.headidx and x.xpos in ['``']]
-			if len(quote_scope) >= 2: #maybe add category for quoted speech
-				quote_scope_idxl = list(range(quote_scope[0],quote_scope[1]))
-				if int(token.idx) in quote_scope_idxl and int(token.headidx) in quote_scope_idxl:
-					quote = False 
-				else:
-					quote = True
+			if '``' in [x.xpos for x in sent if x.headidx == token.headidx]: #maybe add category for quoted speech
+				quote = True #fix this - check scope of quotes, check quote type
 			#have/do question syntax
 			clausedeps = [x for x in sent if x.headidx == token.idx]
 			for indx,x in enumerate(clausedeps):
@@ -543,8 +510,6 @@ def prepositions(token,sent):
 		elif sent[token.headidx].xpos in ["NN","NNS","NNP","NNPS","PRP"]:
 		#elif sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 			token.cat1 = "nmod"
-		elif sent[token.headidx].xpos in ["CD","DT","JJ","JJS"] and sent[token.headidx].deprel in ["nsubj","nsubjpass","dobj","pobj"]: #may need to refine this
-			token.cat1 = "nmod"
 		elif sent[token.headidx].xpos[:2] == "JJ":
 		#elif sent[token.headidx].upos == "ADJ":
 			token.cat1 = "jcomp"
@@ -598,16 +563,9 @@ def determiners(token):
 def that_wh(token,sent): #tweaked version
 	if token.word.lower() == "that" and token.deprel in ["nsubj","nsubjpass","mark"]:
 
-		if sent[token.headidx].deprel in ["relcl"]: #updated 20241001
+		if sent[token.headidx].deprel in ["relcl","acl"]:
 			token.lxgrtag = "relpro"
 			token.cat1 = "relpro_that"
-		elif sent[token.headidx].deprel in ["acl"]: #updated 20241001
-			if sent[sent[token.headidx].headidx].upos in ["NOUN","PROPN","PRON"]: #this may be too restrictive; updated 20241001
-				token.lxgrtag = "relpro"
-				token.cat1 = "relpro_that"
-			elif sent[sent[token.headidx].headidx].xpos[:2] == "JJ": #updated 20241001
-				token.lxgrtag = "comp"
-				token.cat1 = "comp_that"
 			#sent[token.headidx].cat8 = None
 		elif sent[token.headidx].deprel in ["ccomp","csubj"] and token.deprel == "mark":
 			token.lxgrtag = "comp"
@@ -641,7 +599,7 @@ def complexity(token,sent):
 			token.cxtag = "whcls+vcomp"
 	
 	#updated 2024-02-14
-	if token.cxtag in ["thatcls+vcomp","whcls+vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]:	#could be simpler/clearer to also identify "it" as the nsubject	
+	if token.cxtag in ["thatcls+vcomp","whcls+vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx]:	#could be simpler/clearer to also identify "it" as the nsubject	
 		token.cxtag = "xtrapos+thatcls+jcomp"
 		token.cat7 = "jcomp"
 	
@@ -654,7 +612,7 @@ def complexity(token,sent):
 			elif token.cat8 in ["compdel"]:
 				token.cxtag = "thatcls+ncomp" #verb + finite complement clause
 	
-	if token.cat5 in ["compcls","acl","jmod_cls"] and token.cat7 in ["jcomp"] and token.idx > token.headidx:
+	if token.cat5 in ["compcls"] and token.cat7 in ["jcomp"] and token.idx > token.headidx:
 		if token.cxtag != "xtrapos+thatcls+jcomp":
 			if token.cat6 in ["thatcls"]:
 				token.cxtag = "thatcls+jcomp"
@@ -678,16 +636,10 @@ def complexity(token,sent):
 		token.cxtag = "edcls+advl"
 	
 	if token.cat6 in ["tocls"] and token.deprel in ["xcomp"]: #may need more refining
-		if sent[token.headidx].upos in ["VERB"]: #updated 2024-10-08
-			token.cxtag = "tocls+vcomp"
-		elif sent[token.headidx].upos in ["NOUN"]: #need to further test this
-			token.cxtag = "tocls+rel" 
+		token.cxtag = "tocls+vcomp"
 
-	if token.cat6 in ["ingcls"] and token.deprel in ["xcomp"]:
-		if sent[token.headidx].upos in ["VERB"]: #updated 2024-10-08
-			token.cxtag = "ingcls+vcomp"
-		elif sent[token.headidx].upos in ["NOUN"]: #need to further test this
-			token.cxtag = "ingcls+rel"
+	if token.cat6 in ["ingcls"] and token.deprel in ["xcomp"]: #may need more refining
+		token.cxtag = "ingcls+vcomp"
 	
 	if token.cat5 in ["nmod_cls"] and token.cat6 in ["edcls"] and token.cat7 in ["rel","ncomp"]:
 		token.cxtag = "edcls+rel"
@@ -702,7 +654,7 @@ def complexity(token,sent):
 		token.cxtag = "tocls+ncomp"
 	
 	if token.cat5 in ["compcls"] and token.cat6 in ["tocls"]: 
-			if token.cat7 in ["jcomp", "vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]: #the "jcomp" might not be necessary
+			if token.cat7 in ["jcomp", "vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx]: #the "jcomp" might not be necessary
 				token.cxtag = "xtrapos+tocls+jcomp"
 			elif token.cat7 in ["jcomp"]:
 				token.cxtag = "tocls+jcomp"
@@ -725,10 +677,7 @@ def complexity(token,sent):
 				nnpremod = False #this is a dummy/unused variable
 			else:
 				token.cxtag = "nn+npremod" #this tag is probably redundant
-	elif token.deprel in ["conj"] and token.xpos in ["JJ","VBN"] and sent[token.headidx].cxtag == "attr+npremod":
-		token.cat1 = "attr"
-		token.cxtag = "attr+npremod"
-	#To-Do: add code to catch coordinated premodifying adjective phrases (they form a chain of "conj" relations)
+	
 	if token.lxgrtag in ["in"] and token.headdeprel not in ["npadvmod"]: #the "and" statement is an attempt to avoid constructions such as "bit by bit" and "sentence to sentence" being counted here 
 		if token.idx > token.headidx and token.cat1 in ["nmod"]:
 			if token.lemma == "of":
@@ -749,120 +698,15 @@ def complexity(token,sent):
 		if token.lemma not in citations and sent[token.headidx].lemma not in citations and excludeNNP == False:
 			token.cxtag = "appos+npostmod"
 	
-	if token.lxgrtag in ["rb"] and token.lemma not in ["as","how"]: #"as" to avoid comparatives;"how" to avoid "WH" words. May need to add others.
+	if token.lxgrtag in ["rb"] and token.lemma not in ["as"]: #"as" to avoid comparatives. May need to add others.
 		if token.cat1 in ["adjmod"]: 
 			token.cxtag = "rb+jjrbmod"
-		if sent[token.headidx].xpos in ["RB","RBR","JJ","CD"] and token.deprel in ["advmod"]: 
+		if sent[token.headidx].xpos in ["RB","RBR","JJ"] and token.deprel in ["advmod"]: 
 			token.cxtag = "rb+jjrbmod"
 	if token.cat3 in ["sgen"]: #added in v 05_08
 		token.cxtag = "s+gen"
 
-def changeToModal(token,sent,targetidx = 2):
-	sent[token.idx-targetidx].lxgrtag = "vbaux" #change main tag
-	sent[token.idx-targetidx].cat1 = "semimod" #change cat1 tag
-	token.cxtag = sent[token.idx-targetidx].cxtag #reassign cxtag
-	token.cat2 = "vp_w_modal" #reassign category tag
-	token.cat3 = sent[token.idx-targetidx].cat3 #reassign category tag
-	#token.cat4 = sent[token.idx-targetidx].cat4 #reassign category tag
-	token.cat5 = sent[token.idx-targetidx].cat5 #reassign category tag
-	token.cat6 = sent[token.idx-targetidx].cat6 #reassign category tag
-	token.cat7 = sent[token.idx-targetidx].cat7 #reassign category tag
-	token.cat8 = sent[token.idx-targetidx].cat8 #reassign category tag
-	
-	#deal with complementizer deletion issues
-	if token.cat8 == "compdel":
-		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel in ["mark","nsubj","nsubjpass"]]:
-			if token.cat5 in ["nmod_cls"]:
-				token.cat6 = "thatcls"
-				token.cat8 = None
-
-		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel == "mark"]:
-			if token.cat5 in ["compcls","jmod_cls"]:
-				token.cat6 = "thatcls"
-				token.cat8 = None
-
-		### wh clause: ###
-		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
-			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep","dobj"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
-				token.cat6 = "whcls"
-				token.cat8 = None
-		
-		if token.cat7 in ["vcomp"]:
-			if token.cat6 == "whcls":
-				token.cxtag = "whcls+vcomp"
-			elif token.cat6 == "thatcls":
-				token.cxtag = "thatcls+vcomp"
-	#add cat8?
-	sent[token.idx-targetidx].cxtag = None #clean up old tags
-	sent[token.idx-targetidx].cat2 = None #clean up old tags
-	sent[token.idx-targetidx].cat3 = None #clean up old tags
-	sent[token.idx-targetidx].cat4 = None #clean up old tags
-	sent[token.idx-targetidx].cat5 = None #clean up old tags
-	sent[token.idx-targetidx].cat6 = None #clean up old tags
-	sent[token.idx-targetidx].cat7 = None #clean up old tags
-	sent[token.idx-targetidx].cat8 = None #clean up old tags
-
-def semiModalAdjust(token,sent): #adjust tags based on semi-modals
-	if token.lxgrtag in ["vbmain"]:
-		passive = False
-		threeWord = False
-		semiModalL = ["have to","had to","got to", "ought to"]
-		# already treated by spacy as modal: ["got ta","gon na"]
-		# "gon na" causes issues - future development could iron out these bugs
-		semiModalThreeL = ["have got to", "had got to"]
-		semModalBeL = ["be supposed to","be going to"]
-		semModalAboutTo = ["be about to"]
-		semModalUsedTo = ["used to"]
-		#Need to add rules to deal with passive constructions
-		if token.idx >=1 and sent[token.idx-1].lemma == "be" and sent[token.idx-1].deprel in ["auxpass"]:
-			passive = True
-			if token.idx >= 4:
-				modTestL = sent[token.idx-4:token.idx-1]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				modTestBeStr = " ".join([modTestL[0].lemma.lower(),modTestL[1].word.lower(),modTestL[2].word.lower()])
-				if modTestStr in semiModalThreeL: #make adjustments
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif modTestBeStr in semModalBeL:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif modTestBeStr in semModalAboutTo:
-					threeWord = True
-					changeToModal(token,sent,4) #make changes
-				elif " ".join(modTestBeStr.split(" ")[1:]) in semModalUsedTo and modTestBeStr.split(" ")[0] not in ["be"]:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-			if token.idx >= 3 and threeWord == False:
-				modTestL = sent[token.idx-3:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				if modTestStr in semiModalL: #make adjustments
-					changeToModal(token,sent,3)
-		if passive == False:
-		#test longer sequences before shorter ones:
-			if token.idx >= 3:
-				modTestL = sent[token.idx-3:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				modTestBeStr = " ".join([modTestL[0].lemma.lower(),modTestL[1].word.lower(),modTestL[2].word.lower()])
-				if modTestStr in semiModalThreeL: #make adjustments
-					threeWord = True
-					changeToModal(token,sent) #make changes
-				elif modTestBeStr in semModalBeL:
-					threeWord = True
-					changeToModal(token,sent) #make changes
-				elif modTestBeStr in semModalAboutTo:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif " ".join(modTestBeStr.split(" ")[1:]) in semModalUsedTo and modTestBeStr.split(" ")[0] not in ["be"]:
-					threeWord = True
-					changeToModal(token,sent,2) #make changes
-
-			if token.idx >= 2 and threeWord == False:
-				modTestL = sent[token.idx-2:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				if modTestStr in semiModalL: #make adjustments
-					changeToModal(token,sent)
-		#add code to fix missing "wh" or "that complementizer?"
-			#TO DO: need to fix "gonna"
+	### START HERE!!! ###
 
 #############################
 
@@ -914,25 +758,21 @@ def tag(input): #tags :)
 			determiners(token)
 			that_wh(token,sent.tokens)
 			complexity(token,sent.tokens)
-			semiModalAdjust(token,sent.tokens)
 		sents.append(sent)
 	return(sents)
 
-def printer(loToks, verbose = False): 
+def printer(loToks):
 	for sentidx, sent in enumerate(loToks):
 		for x in sent.meta:
 			print(x)
 		for token in sent.tokens:
-			if verbose == True:
-				print(token.idx, token.word, token.lemma, token.cxtag, token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.deprel,token.headidx)
-			else:
-				print(token.idx, token.word, token.lemma, token.cxtag)
+			print(token.idx, token.word, token.lemma, token.cxtag, token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.deprel,token.headidx)
 			#print(token.idx, token.word, token.lemma, token.lxgrtag, token.cat1,token.cat2,token.cat3, token.cat4, token.cat5, token.cat6, token.cat7, token.cat8, token.xpos, token.upos, token.deprel,token.headidx)
 		#print(sentidx,len(loToks))
 		if sentidx +1 != len(loToks):
 			print("\n")
 
-def writer(outname,loToks,joiner = "\t"):
+def writer(outname,loToks,joiner = "\t"): #need to add this to lxgrtgr
 	outf = open(outname,"w")
 	docout = []
 	for sent in loToks:
@@ -975,9 +815,7 @@ def tagFolder(targetDir,outputDir,suff = ".txt"): #need to add this to lxgrtgr
 		writer(outputDir + simpleName.replace(suff,"_tagged"+suff),tagged_sents)
 	print("Your files have been tagged. It is time to check the output!")
 
-def countTagsFile(fname,tagList = None): 
-	if tagList == None:
-		tagList = ["finitecls+advl","thatcls+vcomp","whcls+vcomp","finitecls+rel","thatcls+ncomp","thatcls+jcomp","xtrapos+thatcls+jcomp","whcls+incomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
+def countTagsFile(fname,tagList): #need to add this to lxgrtgr
 	outd = {"ntokens":0}
 	ignored = []
 	for tag in tagList:
@@ -986,8 +824,6 @@ def countTagsFile(fname,tagList = None):
 	for sent in sents:
 		for token in sent.split("\n"):
 			if token[0] == "#":
-				continue
-			elif len(token.split("\t")) < 15:
 				continue
 			else:
 				for tag in token.split("\t")[3:13]:
@@ -1003,7 +839,7 @@ def countTagsFile(fname,tagList = None):
 	return(outd)
 
 #consider making this either a list or a directory
-def countTagsFolder(targetDir,tagList = None,suff = ".txt"): #need to add this to lxgrtgr
+def countTagsFolder(targetDir,tagList,suff = ".txt"): #need to add this to lxgrtgr
 	folderD = {}
 	if targetDir[-1] != "/":
 		targetDir = targetDir + "/"
@@ -1014,9 +850,7 @@ def countTagsFolder(targetDir,tagList = None,suff = ".txt"): #need to add this t
 		folderD[simpleName] = countTagsFile(fname,tagList)
 	return(folderD)
 
-def writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,norming = 10000): #defaults to normed counts (per 10,000 tokens)
-	if tagList == None:
-		tagList = ["finitecls+advl","thatcls+vcomp","whcls+vcomp","finitecls+rel","thatcls+ncomp","thatcls+jcomp","xtrapos+thatcls+jcomp","whcls+incomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
+def writeCounts(outputD,outName, tagList, sep = "\t", normed = True,norming = 10000): #defaults to normed counts (per 10,000 tokens)
 	header = ["filename","ntokens"] + tagList
 	outL = [sep.join(header)]
 	for fname in outputD:
@@ -1068,75 +902,7 @@ def readConll(fname):
 #conllLoS = tag(readConll("sample_conll/bc-cctv-00-cctv_0000.parse.dep"))
 #printer(conllLoS[:3])
 
-### Tests on 2024-10-16
-# printer(tag("He tried as if he would never try again."),verbose = True)
-
-# printer(tag("They were fierce spinsters who said 'no' on principle before they knew what they were going to be asked."),verbose = True)
-# printer(tag("He knew what they were up to."),verbose = True)
-# printer(tag("'maman, do you think the Little Lord Jesus heard me?'"),verbose = True)
-# printer(tag("It was clear that the amendment was going to be defeated."),verbose = True)
-# printer(tag("I'm going to help her, it will be so much fun."),verbose = True)
-# print(list(range(3,6)))
-
-### Tests on 2024-10-15
-# printer(tag("In the process of discovering simple, complex, and end-stopped cells in the cortex, Hubel observed something."),verbose = True)
-# printer(tag("In my first life, I ate pizza."),verbose = True)
-# printer(tag("Most of these are mine."),verbose = True)
-# printer(tag("Many of these are mine."),verbose = True)
-# printer(tag("Some of these are mine."),verbose = True)
-# printer(tag("If this were solely a lifetime exchange, how much of that gain would be recognized?"),verbose = True)
-# printer(tag("The numbers verify that almost three times as much is spent on youth."),verbose = True)
-
-### Tests on 2024-10-09
-# printer(tag("But it is a reminder just how blinkered abortionists can be, on the one hand, and of how determined pro-abortionists are to convince women to talk about their abortions."),verbose = True)
-# printer(tag("It's crazy to try that."),verbose = True)
-# printer(tag("It is evident that the Marxist perspective has been an enormous intellectual and political force."),verbose = True)
-# printer(tag("I am sad that the Marxist perspective has been an enormous intellectual and political force."),verbose = True)
-
-# ### Tests on 2024-10-08
-# printer(tag("matter seeing those problems again, and that's just one, one set of problems."),verbose = True)
-
-# ### Tests on 2024-10-03
-# #v37
-# printer(tag("If you want to work with something big, that's okay."),verbose = True)
-# printer(tag("I'm going to help her, it will be so much fun."),verbose = True)
-# printer(tag("keep in mind that we are going to talk about is very much in flux in what people believe."),verbose = True)
-
-#v36
-# printer(tag("So we need to make sure that we understand."),verbose = True)
-
-# printer(tag("He was so hungry that he ate a cow."),verbose = True) #works
-# printer(tag("He was so immensely hungry that he ate a cow."),verbose = True)#works
-
-# printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to be defeated."),verbose = True)
-# printer(tag("He stayed in the lobby through almost all the voting, but returned at the last minute when it was clear the amendment was going to die."),verbose = True)
-
-### Tests on 2024-10-01
-#printer(tag("They can generally accumulate enough that it never becomes an issue ."),verbose = True)
-
-### Tests on 2024-09-25+26
-#two-word semi-modals
-#semiModalL = ["have to","had to","got to", "ought to"]
-# already treated by spacy as modal: ["got ta","gon na"]
-#moved "about to" to "BE about to"
-# "gon na" causes issues - future development could iron out these bugs
-# printer(tag("He said that they have to try."),verbose = True)
-# printer(tag("He said that they had to try."),verbose = True)
-# printer(tag("He said that they got to try."),verbose = True)
-# printer(tag("He said that they ought to try."),verbose = True)
-# printer(tag("He said that they are gonna try"),verbose = True)
-# #three-word modals
-# printer(tag("He said that they have got to try."),verbose = True)
-# printer(tag("He said that they had got to try."),verbose = True)
-
-# #be three-word modals
-# #semModalBeL = ["be supposed to","be going to","be about to"]
-# printer(tag("He said that he was supposed to try."),verbose = True)
-# printer(tag("He said that he was going to try."),verbose = True)
-# printer(tag("He said that he was about to try."),verbose = True)
-# printer(tag("He said that that they used to try."),verbose = True)
-
-
+### Remaining issues:
 
 ### update 2024-02-08 v0.5.9
 #jj+that+jcomp  - add rule to ensure that jj is before jcomp
