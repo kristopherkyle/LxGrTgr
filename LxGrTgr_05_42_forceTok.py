@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.41"
-version_notes = "0.0.5.41 - Fix a previous over-correction"
+version = "0.0.5.42"
+version_notes = "0.0.5.41 - work on thatcls+vcomp and whcls+vcomp"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -44,8 +44,8 @@ from importlib_resources import files #for opening package files - need to inclu
 print("Importing Spacy")
 import spacy #base NLP
 print("Spacy Successfully Loaded")
-# from spacy.tokens import Doc
-# from spacy.language import Language
+from spacy.tokens import Doc
+from spacy.language import Language
 #nlp = spacy.load("en_core_web_sm") #load model
 print("Loading Transformer Model")
 nlp = spacy.load("en_core_web_trf")  #load model
@@ -54,17 +54,17 @@ nlp.max_length = 1728483 #allow more characters to be processed than default. Th
 
 #the following is only used when attempting to align outputs
 
-# class WhitespaceTokenizer(object):
-# 	def __init__(self, vocab):
-# 		self.vocab = vocab
+class WhitespaceTokenizer(object):
+	def __init__(self, vocab):
+		self.vocab = vocab
 
-# 	def __call__(self, text):
-# 		words = text.split(' ')
-# 		# All tokens 'own' a subsequent space character in this tokenizer
-# 		spaces = [True] * len(words)
-# 		return Doc(self.vocab, words=words, spaces=spaces)
+	def __call__(self, text):
+		words = text.split(' ')
+		# All tokens 'own' a subsequent space character in this tokenizer
+		spaces = [True] * len(words)
+		return Doc(self.vocab, words=words, spaces=spaces)
 
-# nlp.tokenizer = WhitespaceTokenizer(nlp.vocab) #force pre-existing tokenization
+nlp.tokenizer = WhitespaceTokenizer(nlp.vocab) #force pre-existing tokenization
 
 ######################################################
 
@@ -416,6 +416,10 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 				if int(token.idx) in quote_scope_idxl and int(token.headidx) in quote_scope_idxl:
 					quote = False 
 				else:
+					quote = True
+			elif len(quote_scope) == 1:
+				dep_scope_idxl = list(range(int(token.headidx),int(token.idx)))
+				if quote_scope[0] in dep_scope_idxl:
 					quote = True
 			#have/do question syntax
 			clausedeps = [x for x in sent if x.headidx == token.idx]
