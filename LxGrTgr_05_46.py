@@ -44,8 +44,8 @@ from importlib_resources import files #for opening package files - need to inclu
 print("Importing Spacy")
 import spacy #base NLP
 print("Spacy Successfully Loaded")
-from spacy.tokens import Doc
-from spacy.language import Language
+# from spacy.tokens import Doc
+# from spacy.language import Language
 #nlp = spacy.load("en_core_web_sm") #load model
 print("Loading Transformer Model")
 nlp = spacy.load("en_core_web_trf")  #load model
@@ -54,17 +54,17 @@ nlp.max_length = 1728483 #allow more characters to be processed than default. Th
 
 #the following is only used when attempting to align outputs
 
-class WhitespaceTokenizer(object):
-	def __init__(self, vocab):
-		self.vocab = vocab
+# class WhitespaceTokenizer(object):
+# 	def __init__(self, vocab):
+# 		self.vocab = vocab
 
-	def __call__(self, text):
-		words = text.split(' ')
-		# All tokens 'own' a subsequent space character in this tokenizer
-		spaces = [True] * len(words)
-		return Doc(self.vocab, words=words, spaces=spaces)
+# 	def __call__(self, text):
+# 		words = text.split(' ')
+# 		# All tokens 'own' a subsequent space character in this tokenizer
+# 		spaces = [True] * len(words)
+# 		return Doc(self.vocab, words=words, spaces=spaces)
 
-nlp.tokenizer = WhitespaceTokenizer(nlp.vocab) #force pre-existing tokenization
+# nlp.tokenizer = WhitespaceTokenizer(nlp.vocab) #force pre-existing tokenization
 
 ######################################################
 
@@ -230,6 +230,10 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 		token.cat1 = "prtcle"
 	if token.lxgrtag == "rb" and token.cat1 == None:
 		token.cat1 = "othr"
+	#deal with multiword wh-subordinators
+	if token.word.lower() in ["well"] and len([x.word for x in sent if x.cat1 in ["comp_wh"] and x.headidx == token.idx]) > 0:
+		token.lxgrtag = None
+		token.cat1 = None
 
 def verbInfo(token,sent): #this is to help solve a problem with conjugated verb phrases
 	cat2 = None
@@ -345,7 +349,7 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
 				token.cat6 = "whcls"
 			######
-			#attempt to catch "wh" words that are attached to another verb in the verb phrase <not working, kris work on this>
+			# catch "wh" words that are attached to another verb in the verb phrase [updated on 20241028]
 			conjDepList = [x.idx for x in sent if x.headidx == token.idx and x.deprel in ["conj"] and verbInfo(x,sent) in ["nonfinite"]]
 			if len(conjDepList) > 0:
 				if len([x.word.lower() for x in sent if x.headidx == conjDepList[-1] and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0:
@@ -654,6 +658,15 @@ def that_wh(token,sent): #tweaked version
 			sent[token.headidx].cat6 = "whcls"
 			token.lxgrtag = "comp"
 			token.cat1 = "comp_wh"
+		elif sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].word.lower() in ["well"]:
+			sent[sent[token.headidx].headidx].cat6 = "whcls"
+			token.lxgrtag = "comp"
+			token.cat1 = "comp_wh"
+			# sent[token.headidx].lxgrtag = None #do not treat "well" as adverb
+			# sent[token.headidx].cat1 = None #do not treat "well" as adverb
+
+
+
 			#sent[token.headidx].cat8 = None
 
 def complexity(token,sent):
@@ -1111,6 +1124,9 @@ def readConll(fname):
 
 ### Tests on 2024-10-28
 #printer(tag("But you can see how you can simulate and see what the expected payment is."),verbose = True)
+# printer(tag("Can you see how incredibly well they have done?"),verbose = True)
+# printer(tag("Can you see how they have done?"),verbose = True)
+
 
 ### Tests on 2024-10-16
 # printer(tag("He tried as if he would never try again."),verbose = True)

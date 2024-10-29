@@ -345,7 +345,7 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
 				token.cat6 = "whcls"
 			######
-			#attempt to catch "wh" words that are attached to another verb in the verb phrase <not working, kris work on this>
+			# catch "wh" words that are attached to another verb in the verb phrase [updated on 20241028]
 			conjDepList = [x.idx for x in sent if x.headidx == token.idx and x.deprel in ["conj"] and verbInfo(x,sent) in ["nonfinite"]]
 			if len(conjDepList) > 0:
 				if len([x.word.lower() for x in sent if x.headidx == conjDepList[-1] and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0:
@@ -1111,6 +1111,9 @@ def readConll(fname):
 
 ### Tests on 2024-10-28
 #printer(tag("But you can see how you can simulate and see what the expected payment is."),verbose = True)
+# printer(tag("Can you see how incredibly well they have done?"),verbose = True)
+# printer(tag("Can you see how they have done?"),verbose = True)
+
 
 ### Tests on 2024-10-16
 # printer(tag("He tried as if he would never try again."),verbose = True)
