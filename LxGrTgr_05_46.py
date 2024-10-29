@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.42"
-version_notes = "0.0.5.41 - work on thatcls+vcomp and whcls+vcomp - quotes"
+version = "0.0.5.46"
+version_notes = "0.0.5.46 - work on thatcls+vcomp and whcls+vcomp - coordinated verb phrases and multi-word wh-complementizers"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -72,6 +72,11 @@ nlp.max_length = 1728483 #allow more characters to be processed than default. Th
 # nominal_stop = files('lists_LGR').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
 # prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
+# for Python package:
+# nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
+# prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
+
+# for web access and pc access:
 # os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
 nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
 prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
