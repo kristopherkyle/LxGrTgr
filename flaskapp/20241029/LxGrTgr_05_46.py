@@ -38,18 +38,18 @@ import os #for making folders
 # import xml.etree.ElementTree as ET #for xml parsing
 from random import sample #for random samples
 import re #for regulat expressions
-from importlib_resources import files #for opening package files - need to include in package dependencies
+# from importlib_resources import files #for opening package files - need to include in package dependencies
 
 ### spacy
-print("Importing Spacy")
+# print("Importing Spacy")
 import spacy #base NLP
-print("Spacy Successfully Loaded")
+# print("Spacy Successfully Loaded")
 # from spacy.tokens import Doc
 # from spacy.language import Language
-#nlp = spacy.load("en_core_web_sm") #load model
-print("Loading Transformer Model")
-nlp = spacy.load("en_core_web_trf")  #load model
-print("Transformer Model Successfully Loaded")
+nlp = spacy.load("en_core_web_sm") #load model
+# print("Loading Transformer Model")
+# # nlp = spacy.load("en_core_web_trf")  #load model
+# print("Transformer Model Successfully Loaded")
 nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
