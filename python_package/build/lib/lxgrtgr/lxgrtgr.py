@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.41.1"
-version_notes = "0.0.5.41.1 - Fix a previous over-correction"
+version = "0.0.5.46"
+version_notes = "0.0.5.46 - work on thatcls+vcomp and whcls+vcomp - coordinated verb phrases and multi-word wh-complementizers"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -71,9 +71,12 @@ nlp.max_length = 1728483 #allow more characters to be processed than default. Th
 ### Load lists, etc. #################################
 # nominal_stop = files('lists_LGR').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
 # prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
+
+# for Python package:
 nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
 prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
+# for web access and pc access:
 # os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
 # nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
 # prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
@@ -232,6 +235,30 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 		token.cat1 = "prtcle"
 	if token.lxgrtag == "rb" and token.cat1 == None:
 		token.cat1 = "othr"
+	#deal with multiword wh-subordinators
+	if token.word.lower() in ["well"] and len([x.word for x in sent if x.cat1 in ["comp_wh"] and x.headidx == token.idx]) > 0:
+		token.lxgrtag = None
+		token.cat1 = None
+
+def verbInfo(token,sent): #this is to help solve a problem with conjugated verb phrases
+	cat2 = None
+	#this is an ordered list of POS tags for the main verb and auxs represented in the VP
+	if token.xpos[:2] in ["VB","MD"] and token.deprel not in ["amod","acomp","aux","auxpass"]:
+		vp_pos = [x.xpos for x in sent if (x.headidx == token.idx and x.deprel in ["aux","auxpass"]) or x.idx == token.idx]
+		#print(vp_pos)
+		if "MD" in vp_pos:
+			cat2 = "vp_w_modal"
+		elif "VBZ" in vp_pos:
+			cat2 = "pres"
+		elif "VBP" in vp_pos:
+			cat2 = "pres"
+		elif "VBD" in vp_pos:
+			cat2 = "past"
+		elif len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass"]]) > 0 and token.xpos == "VBN":
+			cat2 = "past" #if a seeming -ed clause has a subject, count it as finite
+		else:
+			cat2 = "nonfinite" #probably need more testing here
+	return(cat2)
 
 def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 	that0_list = "check consider ensure illustrate fear say assume understand hold appreciate insist feel reveal indicate wish decide express follow suggest saw direct pray observe record imagine see think show confirm ask meant acknowledge recognize need accept contend come maintain believe claim verify demonstrate learn hope thought reflect deduce prove find deny wrote read repeat remember admit adds advise compute reach trust yield state describe realize expect mean report know stress note told held explain hear gather establish suppose found use fancy submit doubt felt".split(" ")
@@ -326,7 +353,13 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
 			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
 				token.cat6 = "whcls"
-		
+			######
+			# catch "wh" words that are attached to another verb in the verb phrase [updated on 20241028]
+			conjDepList = [x.idx for x in sent if x.headidx == token.idx and x.deprel in ["conj"] and verbInfo(x,sent) in ["nonfinite"]]
+			if len(conjDepList) > 0:
+				if len([x.word.lower() for x in sent if x.headidx == conjDepList[-1] and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0:
+					token.cat6 = "whcls"
+			######
 		if token.cat2 == "nonfinite":
 			### to clause ###
 			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO" and sent[x.idx-1].lemma not in ["order"]]: #and sent[x.idx-1].lemma not in ["seem","have","need","want","order"] Doug didn't like these as semi-modals - kept in "order" to catch "in order to"
@@ -418,6 +451,10 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 				if int(token.idx) in quote_scope_idxl and int(token.headidx) in quote_scope_idxl:
 					quote = False 
 				else:
+					quote = True
+			elif len(quote_scope) == 1:
+				dep_scope_idxl = list(range(int(token.headidx),int(token.idx)))
+				if quote_scope[0] in dep_scope_idxl:
 					quote = True
 			#have/do question syntax
 			clausedeps = [x for x in sent if x.headidx == token.idx]
@@ -626,6 +663,15 @@ def that_wh(token,sent): #tweaked version
 			sent[token.headidx].cat6 = "whcls"
 			token.lxgrtag = "comp"
 			token.cat1 = "comp_wh"
+		elif sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].word.lower() in ["well"]:
+			sent[sent[token.headidx].headidx].cat6 = "whcls"
+			token.lxgrtag = "comp"
+			token.cat1 = "comp_wh"
+			# sent[token.headidx].lxgrtag = None #do not treat "well" as adverb
+			# sent[token.headidx].cat1 = None #do not treat "well" as adverb
+
+
+
 			#sent[token.headidx].cat8 = None
 
 def complexity(token,sent):
@@ -866,6 +912,16 @@ def semiModalAdjust(token,sent): #adjust tags based on semi-modals
 		#add code to fix missing "wh" or "that complementizer?"
 			#TO DO: need to fix "gonna"
 
+def coordinatedClauseAdjust(token,sent): #deal with coordinate clauses and wh-words in coordinated VPs
+	#deal with coordinated clauses
+	if token.lxgrtag in ["vbmain"] and token.deprel in ["conj"] and token.cat2 not in ["nonfinite"]:
+		if sent[token.headidx].cxtag in ["thatcls+vcomp","whcls+vcomp"]: #may need to extend this...
+			token.cxtag = sent[token.headidx].cxtag
+			token.cat5 = sent[token.headidx].cat5
+			token.cat8 = sent[token.headidx].cat8
+
+
+
 #############################
 
 #### These functions use the previous functions to conduct tagging and tallying of lexicogramamtical features ###
@@ -917,6 +973,7 @@ def tag(input): #tags :)
 			that_wh(token,sent.tokens)
 			complexity(token,sent.tokens)
 			semiModalAdjust(token,sent.tokens)
+			coordinatedClauseAdjust(token,sent.tokens)
 		sents.append(sent)
 	return(sents)
 
@@ -1069,6 +1126,12 @@ def readConll(fname):
 #test conll
 #conllLoS = tag(readConll("sample_conll/bc-cctv-00-cctv_0000.parse.dep"))
 #printer(conllLoS[:3])
+
+### Tests on 2024-10-28
+#printer(tag("But you can see how you can simulate and see what the expected payment is."),verbose = True)
+# printer(tag("Can you see how incredibly well they have done?"),verbose = True)
+# printer(tag("Can you see how they have done?"),verbose = True)
+
 
 ### Tests on 2024-10-16
 # printer(tag("He tried as if he would never try again."),verbose = True)

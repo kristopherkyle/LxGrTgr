@@ -1,10 +1,12 @@
 Metadata-Version: 2.1
 Name: lxgrtgr
-Version: 0.5.41.1
+Version: 0.5.46
 Summary: Lexicogrammatical tagging and tag counting tool
 Home-page: https://github.com/kristopherkyle/LxGrTgr
 Author: Kristopher Kyle
 Author-email: kristopherkyle1@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
 Description-Content-Type: text/markdown
@@ -114,3 +116,4 @@ We are currently developing tag descriptions and detailed annotation guidelines 
 
 ## License
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+
