@@ -1330,6 +1330,8 @@ def readConll(fname):
 ## "That" is an issue: ##
 
 ###
+printer(tag("As far as we know, the meeting is still scheduled for tomorrow."),verbose = True) #spacy tags as amod+prep
+
 
 
 
