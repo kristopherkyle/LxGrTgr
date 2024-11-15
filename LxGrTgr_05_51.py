@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.50"
-version_notes = "0.0.5.50 - reconfigure multi-word subordinators"
+version = "0.0.5.51"
+version_notes = "0.0.5.51 - reconfigure multi-word modals"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -177,14 +177,6 @@ def nGramForward(token,sent,n,lowered = True):
 	else:
 		return(" ".join([x.word.lower() for x in sent[token.idx:token.idx+n]]))
 
-# def nGramBackward(token,sent,n,lowered = True):
-# 	if len(sent[:token.idx+1]) < n:
-# 		return([x.word.lower() for x in sent[:token.idx]])
-# 	elif lowered == True:
-# 		return(" ".join([x.word.lower() for x in sent[token.idx-n:token.idx+1]]))
-# 	else:
-# 		return(" ".join([x.word.lower() for x in sent[token.idx-n:token.idx+1]]))
-
 def nGramMiddle(token,sent,behind,ahead,lowered = True): #finish this
 	
 	if len(sent[:token.idx+1]) < behind or len(sent[token.idx:]) < ahead:
@@ -193,6 +185,16 @@ def nGramMiddle(token,sent,behind,ahead,lowered = True): #finish this
 		return(" ".join([x.word.lower() for x in sent[token.idx-behind:token.idx+1+ahead]]))
 	else:
 		return(" ".join([x.word.lower() for x in sent[token.idx-behind:token.idx+1+ahead]]))
+
+def nGramMiddleBe(token,sent,behind,ahead,lowered = True): #finish this
+	
+	if len(sent[:token.idx+1]) < behind or len(sent[token.idx:]) < ahead:
+		return(token.word.lower())
+	elif lowered == True:
+		tokL = sent[token.idx-behind:token.idx+1+ahead]
+		return(" ".join([tokL[0].lemma.lower()]+[x.word.lower() for x in tokL[1:]]))
+	else:
+		return(" ".join([tokL[0].lemma]+[x.word for x in tokL[1:]]))
 
 def multiWordPrepositions(token,sent):
 	#two-word seqs
@@ -447,6 +449,55 @@ def multiWordSubordinators(token,sent):
 					sent[thirdWordLoc-2].headidx = thirdWordLoc+1
 
 
+def reassignHeads(headidxOld,headidxNew,sent):
+	for token in sent:
+		if token.headidx == headidxOld and token.deprel not in ["goeswith"]:
+			token.headidx = headidxNew
+
+def semiModalAdjust(token,sent): #adjust tags based on semi-modals
+	if token.deprel in ["xcomp"]:
+		if nGramMiddle(sent[token.headidx],sent,1,1) in ["have got to", "had got to"] or nGramMiddleBe(sent[token.headidx],sent,1,1) in ["be supposed to","be going to"]:
+			oldHead = token.headidx
+			newHead = token.idx
+			token.headidx = sent[oldHead].headidx #reassign head to previous modal head
+			token.deprel = sent[oldHead].deprel #reassign head to previous modal head
+			sent[oldHead].deprel = "goeswith"
+			sent[oldHead].xpos = "MD"
+			sent[oldHead].headidx = oldHead+1
+			sent[oldHead+1].deprel = "aux"
+			sent[oldHead+1].xpos = "MD"
+			sent[oldHead-1].deprel = "goeswith"
+			sent[oldHead-1].xpos = "MD"
+			sent[oldHead-1].headidx = oldHead+1
+			reassignHeads(oldHead,newHead,sent) #reassign other heads from modal to main verb
+
+		elif nGramMiddleBe(sent[token.headidx],sent,1,1) in ["be about to"]:
+			oldHeadBe = token.headidx-1
+			oldHeadAbout = token.headidx
+			newHead = token.idx
+			token.headidx = sent[oldHeadBe].headidx #reassign head to previous modal head
+			token.deprel = sent[oldHeadBe].deprel #reassign head to previous modal head
+			sent[oldHeadAbout].deprel = "goeswith"
+			sent[oldHeadAbout].xpos = "MD"
+			sent[oldHeadAbout].headidx = oldHeadAbout+1
+			sent[oldHeadAbout+1].deprel = "aux"
+			sent[oldHeadAbout+1].xpos = "MD"
+			sent[oldHeadAbout-1].deprel = "goeswith"
+			sent[oldHeadAbout-1].xpos = "MD"
+			sent[oldHeadAbout-1].headidx = oldHeadAbout+1
+			reassignHeads(oldHeadBe,newHead,sent) #reassign other heads from modal to main verb
+
+		elif nGramMiddle(sent[token.headidx],sent,0,1) in ["have to","had to","got to", "ought to","got ta","gon na","used to"] and nGramMiddleBe(sent[token.headidx],sent,1,1) not in ["be used to"]: #and sent[token.headidx].deprel not in "goeswith"
+			oldHead = token.headidx
+			newHead = token.idx
+			token.headidx = sent[oldHead].headidx #reassign head to previous modal head
+			token.deprel = sent[oldHead].deprel #reassign head to previous modal head
+			sent[oldHead].deprel = "goeswith"
+			sent[oldHead].xpos = "MD"
+			sent[oldHead].headidx = oldHead+1
+			sent[oldHead+1].deprel = "aux"
+			sent[oldHead+1].xpos = "MD"
+			reassignHeads(oldHead,newHead,sent) #reassign other heads from modal to main verb
 
 
 def nouns(token,nominalStopList = nominal_stop): #revised 2022-11-22; This is probably overly greedy. It was filtered using frequent candidates in T2KSWAL and TMLE
@@ -1111,113 +1162,6 @@ def complexity(token,sent):
 	if token.cat3 in ["sgen"]: #added in v 05_08
 		token.cxtag = "s+gen"
 
-def changeToModal(token,sent,targetidx = 2):
-	sent[token.idx-targetidx].lxgrtag = "vbaux" #change main tag
-	sent[token.idx-targetidx].cat1 = "semimod" #change cat1 tag
-	token.cxtag = sent[token.idx-targetidx].cxtag #reassign cxtag
-	token.cat2 = "vp_w_modal" #reassign category tag
-	token.cat3 = sent[token.idx-targetidx].cat3 #reassign category tag
-	#token.cat4 = sent[token.idx-targetidx].cat4 #reassign category tag
-	token.cat5 = sent[token.idx-targetidx].cat5 #reassign category tag
-	token.cat6 = sent[token.idx-targetidx].cat6 #reassign category tag
-	token.cat7 = sent[token.idx-targetidx].cat7 #reassign category tag
-	token.cat8 = sent[token.idx-targetidx].cat8 #reassign category tag
-	
-	#deal with complementizer deletion issues
-	if token.cat8 == "compdel":
-		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel in ["mark","nsubj","nsubjpass"]]:
-			if token.cat5 in ["nmod_cls"]:
-				token.cat6 = "thatcls"
-				token.cat8 = None
-
-		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel == "mark"]:
-			if token.cat5 in ["compcls","jmod_cls"]:
-				token.cat6 = "thatcls"
-				token.cat8 = None
-
-		### wh clause: ###
-		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
-			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep","dobj"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
-				token.cat6 = "whcls"
-				token.cat8 = None
-		
-		if token.cat7 in ["vcomp"]:
-			if token.cat6 == "whcls":
-				token.cxtag = "whcls+vcomp"
-			elif token.cat6 == "thatcls":
-				token.cxtag = "thatcls+vcomp"
-	#add cat8?
-	sent[token.idx-targetidx].cxtag = None #clean up old tags
-	sent[token.idx-targetidx].cat2 = None #clean up old tags
-	sent[token.idx-targetidx].cat3 = None #clean up old tags
-	sent[token.idx-targetidx].cat4 = None #clean up old tags
-	sent[token.idx-targetidx].cat5 = None #clean up old tags
-	sent[token.idx-targetidx].cat6 = None #clean up old tags
-	sent[token.idx-targetidx].cat7 = None #clean up old tags
-	sent[token.idx-targetidx].cat8 = None #clean up old tags
-
-def semiModalAdjust(token,sent): #adjust tags based on semi-modals
-	if token.lxgrtag in ["vbmain"]:
-		passive = False
-		threeWord = False
-		semiModalL = ["have to","had to","got to", "ought to"]
-		# already treated by spacy as modal: ["got ta","gon na"]
-		# "gon na" causes issues - future development could iron out these bugs
-		semiModalThreeL = ["have got to", "had got to"]
-		semModalBeL = ["be supposed to","be going to"]
-		semModalAboutTo = ["be about to"]
-		semModalUsedTo = ["used to"]
-		#Need to add rules to deal with passive constructions [Done]
-		if token.idx >=1 and sent[token.idx-1].lemma == "be" and sent[token.idx-1].deprel in ["auxpass"]:
-			passive = True
-			if token.idx >= 4:
-				modTestL = sent[token.idx-4:token.idx-1]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				modTestBeStr = " ".join([modTestL[0].lemma.lower(),modTestL[1].word.lower(),modTestL[2].word.lower()])
-				if modTestStr in semiModalThreeL: #make adjustments
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif modTestBeStr in semModalBeL:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif modTestBeStr in semModalAboutTo:
-					threeWord = True
-					changeToModal(token,sent,4) #make changes
-				elif " ".join(modTestBeStr.split(" ")[1:]) in semModalUsedTo and modTestBeStr.split(" ")[0] not in ["be"]:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-			if token.idx >= 3 and threeWord == False:
-				modTestL = sent[token.idx-3:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				if modTestStr in semiModalL: #make adjustments
-					changeToModal(token,sent,3)
-		if passive == False:
-		#test longer sequences before shorter ones:
-			if token.idx >= 3:
-				modTestL = sent[token.idx-3:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				modTestBeStr = " ".join([modTestL[0].lemma.lower(),modTestL[1].word.lower(),modTestL[2].word.lower()])
-				if modTestStr in semiModalThreeL: #make adjustments
-					threeWord = True
-					changeToModal(token,sent) #make changes
-				elif modTestBeStr in semModalBeL:
-					threeWord = True
-					changeToModal(token,sent) #make changes
-				elif modTestBeStr in semModalAboutTo:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif " ".join(modTestBeStr.split(" ")[1:]) in semModalUsedTo and modTestBeStr.split(" ")[0] not in ["be"]:
-					threeWord = True
-					changeToModal(token,sent,2) #make changes
-
-			if token.idx >= 2 and threeWord == False:
-				modTestL = sent[token.idx-2:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				if modTestStr in semiModalL: #make adjustments
-					changeToModal(token,sent)
-		#add code to fix missing "wh" or "that complementizer?"
-			#TO DO: need to fix "gonna"
-
 def coordinatedClauseAdjust(token,sent): #deal with coordinate clauses and wh-words in coordinated VPs
 	#deal with coordinated clauses
 	if token.lxgrtag in ["vbmain"] and token.deprel in ["conj"] and token.cat2 not in ["nonfinite"]:
@@ -1269,6 +1213,7 @@ def tag(input): #tags :)
 			#deal with multiword units first
 			multiWordPrepositions(token,sent.tokens)
 			multiWordSubordinators(token,sent.tokens)
+			semiModalAdjust(token,sent.tokens)
 		
 		for token in sent.tokens:
 			if token.deprel in ["goeswith"]:
@@ -1287,7 +1232,7 @@ def tag(input): #tags :)
 				determiners(token)
 				that_wh(token,sent.tokens)
 				complexity(token,sent.tokens)
-				semiModalAdjust(token,sent.tokens)
+				# semiModalAdjust(token,sent.tokens)
 				coordinatedClauseAdjust(token,sent.tokens)
 		sents.append(sent)
 	return(sents)
@@ -1670,22 +1615,26 @@ def readConll(fname):
 #semiModalL = ["have to","had to","got to", "ought to"]
 # already treated by spacy as modal: ["got ta","gon na"]
 #moved "about to" to "BE about to"
-# "gon na" causes issues - future development could iron out these bugs
+# "gon na" causes issues - future development could iron out these bugs[fixed in version 05_51]
 # printer(tag("He said that they have to try."),verbose = True)
 # printer(tag("He said that they had to try."),verbose = True)
 # printer(tag("He said that they got to try."),verbose = True)
-# printer(tag("He said that they ought to try."),verbose = True)
+printer(tag("He said that they ought to try."),verbose = True)
+# printer(tag("He said that they should try."),verbose = True)
+# printer(tag("He said that they ought to have tried."),verbose = True)
+
 # printer(tag("He said that they are gonna try"),verbose = True)
-# #three-word modals
+# printer(tag("He said that they gotta try"),verbose = True)
+
+#three-word modals
 # printer(tag("He said that they have got to try."),verbose = True)
 # printer(tag("He said that they had got to try."),verbose = True)
 
-# #be three-word modals
-# #semModalBeL = ["be supposed to","be going to","be about to"]
+#be three-word modals
 # printer(tag("He said that he was supposed to try."),verbose = True)
 # printer(tag("He said that he was going to try."),verbose = True)
 # printer(tag("He said that he was about to try."),verbose = True)
-# printer(tag("He said that that they used to try."),verbose = True)
+# printer(tag("He said that they used to try."),verbose = True)
 
 
 
