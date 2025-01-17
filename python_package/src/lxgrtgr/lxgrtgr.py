@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.46"
-version_notes = "0.0.5.46 - work on thatcls+vcomp and whcls+vcomp - coordinated verb phrases and multi-word wh-complementizers"
+version = "0.0.5.59"
+version_notes = "0.0.5.59 - Minor updates based on Doug's feedback"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -44,8 +44,8 @@ from importlib_resources import files #for opening package files - need to inclu
 print("Importing Spacy")
 import spacy #base NLP
 print("Spacy Successfully Loaded")
-# from spacy.tokens import Doc
-# from spacy.language import Language
+from spacy.tokens import Doc
+from spacy.language import Language
 #nlp = spacy.load("en_core_web_sm") #load model
 print("Loading Transformer Model")
 nlp = spacy.load("en_core_web_trf")  #load model
@@ -54,17 +54,17 @@ nlp.max_length = 1728483 #allow more characters to be processed than default. Th
 
 #the following is only used when attempting to align outputs
 
-# class WhitespaceTokenizer(object):
-# 	def __init__(self, vocab):
-# 		self.vocab = vocab
+class WhitespaceTokenizer(object):
+	def __init__(self, vocab):
+		self.vocab = vocab
 
-# 	def __call__(self, text):
-# 		words = text.split(' ')
-# 		# All tokens 'own' a subsequent space character in this tokenizer
-# 		spaces = [True] * len(words)
-# 		return Doc(self.vocab, words=words, spaces=spaces)
+	def __call__(self, text):
+		words = text.split(' ')
+		# All tokens 'own' a subsequent space character in this tokenizer
+		spaces = [True] * len(words)
+		return Doc(self.vocab, words=words, spaces=spaces)
 
-# nlp.tokenizer = WhitespaceTokenizer(nlp.vocab) #force pre-existing tokenization
+#nlp.tokenizer = WhitespaceTokenizer(nlp.vocab) #force pre-existing tokenization
 
 ######################################################
 
@@ -109,7 +109,7 @@ class tokenInfo():
 		self.upos = spacyToken.pos_ #Universal part of speech
 		self.xpos = spacyToken.tag_ #penn tag
 		self.deprel = spacyToken.dep_ #dependency relation (based on CLEAR tagset)
-		self.head = spacyToken.head#.text #text of head
+		self.head = spacyToken.head.text #.text #text of head
 		self.headidx = spacyToken.head.i #id of head
 		self.headdeprel = spacyToken.head.dep_
 		#self.children = spacyToken.children
@@ -156,7 +156,412 @@ class sentBlank():
 		self.meta = []
 		self.tokens = []
 
+### Classes and functions for using Gold Conllu Data
+class spacyIshHead():
+	def __init__(self):
+		self.text = None
+		self.i = None
+		self.dep_ = None
+
+class spacyIshToken():
+	def __init__(self, tokenList): 
+		self.i = int(tokenList[0]) #will have to add this from position in sentence
+		self.text = tokenList[1] #raw text
+		self.lemma_ = tokenList[2].lower() #lowered lemma form
+		self.pos_ = None #need to add this
+		self.tag_ = tokenList[3] #penn tag
+		self.dep_ = tokenList[6] #dependency relation (based on CLEAR tagset)
+		self.head = spacyIshHead() #.text #text of head
+		self.head.i = int(tokenList[5])
+		#self.children = spacyToken.children
+		self.cxtag = None #Biber et al's complexity tags
+		self.lxgrtag = None #main tag
+		self.cat1 = None #additional tag (based on tag schema)
+		self.cat2 = None #additional tag (based on tag schema)
+		self.cat3 = None #additional tag (based on tag schema)
+		self.cat4 = None #additional tag (based on tag schema)
+		self.cat5 = None #additional tag (based on tag schema)
+		self.cat6 = None #additional tag (based on tag schema)
+		self.cat7 = None #additional tag (based on tag schema)
+		self.cat8 = None #additional tag (based on tag schema)
+		self.cat9 = None #additional tag (based on tag schema)
+		self.semtag = None #additional tag (based on tag schema)
+
+class spacyDocIsh():
+	def __init__(self):
+		self.sents = []
+
+def processConllu(inputString):
+	outList = spacyDocIsh()
+	for sent in inputString.split("\n\n"):
+		#print(sent)
+		ignoreSent = False
+		sentList = []
+		#sentObj = spacyDocIsh()
+		tokens = sent.split("\n")
+		if len(tokens) < 2: #skip sentences that have only one token
+			continue
+		for token in tokens:
+			#print(token)
+			tokInfo = token.split("\t")
+			sentList.append(spacyIshToken(tokInfo))
+	#iterate back through and add additional info
+		#print([[x.text,x.head.i] for x in sentList])
+		for token in sentList:
+			if token.tag_ in ["XX"]:
+				ignoreSent = True
+			#print(token.head.i)
+			token.head.text = sentList[token.head.i-1].text
+			token.head.dep_ = sentList[token.head.i-1].dep_
+		if ignoreSent == False:
+			outList.sents.append(sentList)
+	return(outList)
+#####
+
 ### Linguistic Analysis Functions ###
+def makeNone(sent,tokenidx): #make None
+	sent[tokenidx].lxgrtag = None
+	sent[tokenidx].cxtag = None
+	sent[tokenidx].cat1 = None
+	sent[tokenidx].cat3 = None
+	sent[tokenidx].cat4 = None
+	sent[tokenidx].cat5 = None
+	sent[tokenidx].cat6 = None
+	sent[tokenidx].cat7 = None
+	sent[tokenidx].cat8 = None
+
+
+def nGramForward(token,sent,n,lowered = True):
+	if len(sent[token.idx+1:]) < n:
+		return([x.word.lower() for x in sent[token.idx:]])
+	elif lowered == True:
+		return(" ".join([x.word.lower() for x in sent[token.idx:token.idx+n]]))
+	else:
+		return(" ".join([x.word.lower() for x in sent[token.idx:token.idx+n]]))
+
+def nGramMiddle(token,sent,behind,ahead,lowered = True): #finish this
+	
+	if len(sent[:token.idx]) < behind or len(sent[token.idx+1:]) < ahead:
+		return(token.word.lower())
+	elif lowered == True:
+		return(" ".join([x.word.lower() for x in sent[token.idx-behind:token.idx+1+ahead]]))
+	else:
+		return(" ".join([x.word.lower() for x in sent[token.idx-behind:token.idx+1+ahead]]))
+
+def nGramMiddleBe(token,sent,behind,ahead,lowered = True): #finish this
+	
+	if len(sent[:token.idx]) < behind or len(sent[token.idx+1:]) < ahead:
+		return(token.word.lower())
+	elif lowered == True:
+		tokL = sent[token.idx-behind:token.idx+1+ahead]
+		return(" ".join([tokL[0].lemma.lower()]+[x.word.lower() for x in tokL[1:]]))
+	else:
+		return(" ".join([tokL[0].lemma]+[x.word for x in tokL[1:]]))
+
+def multiWordPrepositions(token,sent):
+	#two-word seqs
+	mltWrdPrepPrep = ['as for', 'but for', 'except for', 'save for', 'as from', 'as of', 'out of', 'depending on', 'according to', 'as to', 'on to', 'up to', 'along with', 'on to', 'up to']
+	mltWrdAdvmodPrep = ['apart from', 'aside from', 'away from', 'ahead of', 'inside of', 'instead of', 'irrespective of', 'outside of', 'regardless of', 'close to', 'contrary to', 'next to', 'opposite to', 'owing to','preliminary to', 'preparatory to','previous to', 'prior to', 'relative to', 'subsequent to', 'together with', 'back to'] #advmod
+	mltWrdAcompPrep = ['devoid of', 'exclusive of', 'void of'] #maybe JJ + Prep?
+	mltWrdPcompPrep = ['because of', 'due to']
+	mltWrdAdvclsPrep = ['exclusive of', 'owing to'] #these are in both lists
+	mltWrdNpadvmodPrep = ['thanks to']
+	mltWrdAmodPrep = ['such as']
+	mltWrdAdvmodQuantmod = ['upwards of'] # advmod+quantmod
+
+	#Three-word seqs
+	#mltWrdPrpThree = ['as far as', 'as well as', 'in exchange for', 'in return for', 'as distinct from', 'by means of', 'by virtue of', 'by way of', 'for lack of', 'for want of', 'in aid of', 'in back of', 'in case of', 'in charge of', 'in consequence of', 'in favour of', 'in front of', 'in lieu of', 'in light of', 'in need of', 'in place of', 'in respect of', 'in search of', 'in spite of',  'in terms of', 'in view of', 'on account of', 'on behalf of', 'on grounds of', 'on top of', 'as opposed to', 'by reference to', 'in addition to', 'in contrast to', 'in reference to', 'in regard to', 'in relation to', 'with regard to', 'with reference to', 'with respect to',  'at variance with', 'in accordance with', 'in comparison with', 'in compliance with',  'in conformity with', 'in contact with', 'in line with', 'as a result of', 'at the expense of', 'for the sake of', 'in the case of', 'in the event of', 'in the light of', 'on the grounds of',  'on the ground of', 'on the part of', 'with the exception of', 'at the back of', 'in the middle of',  'as well as', 'by means of', 'in addition to', 'in front of', 'in spite of','with regard to']
+	mltWrdPrpThreeAdvmodAdvmodMark = ['as far as'] #can be used as mw prep or mw subordinator
+	#mltWrdPrpThreeAdvmodAdvmodcc = ['as well as'] #skipping this one for now. Functions as a coordinator?
+	mltWrdPrpThreeMarkAdvclPrep = ['as opposed to'] #
+	#mltWrdPrpThreePrepAmodPrep = ['as distinct from'] #same pattern as below
+	mltWrdPrpThreePrepPobjPrep = ['as distinct from','in exchange for', 'in return for', 'by means of', 'by virtue of', 'by way of', 'for lack of', 'for want of', 'in aid of', 'in back of', 'in case of', 'in charge of', 'in consequence of', 'in favour of', 'in front of', 'in lieu of', 'in light of', 'in need of', 'in place of', 'in respect of', 'in search of', 'in spite of', 'in terms of', 'in view of', 'on account of', 'on behalf of', 'on grounds of', 'on top of', 'by reference to', 'in addition to', 'in contrast to', 'in reference to', 'in regard to', 'in relation to', 'with regard to', 'with reference to', 'with respect to', 'at variance with', 'in accordance with', 'in comparison with', 'in compliance with', 'in conformity with', 'in contact with', 'in line with']
+	mltWrdPrpFourPrepDetPobjPrep = ['as a result of', 'at the expense of', 'for the sake of', 'in the case of', 'in the event of', 'in the light of', 'on the grounds of', 'on the ground of', 'on the part of', 'with the exception of', 'at the back of', 'in the middle of']
+
+	if token.deprel == "prep":
+		if nGramForward(token,sent,2) in mltWrdPrepPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"]:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure
+			token.lxgrtag = "inphrsl"
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+	
+	if token.deprel == "advmod":
+		if nGramForward(token,sent,2) in mltWrdAdvmodPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			if sent[token.idx+1].deprel in ["cc"]:
+				sent[token.idx+1].cxtag = "in+advl" #change dependency structure if advmod is not the dep of the prep			
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+		if nGramForward(token,sent,2) in mltWrdAdvmodQuantmod: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["quantmod"]:
+				sent[token.idx+1].headidx = sent[sent[token.idx+1].headidx].idx #change dependency structure
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+			sent[token.idx+1].deprel = "prep"
+			sent[token.idx+1].cxtag = "in+advl"
+
+
+	if token.deprel in ["acomp","oprd"]:
+		if nGramForward(token,sent,2) in mltWrdAcompPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+
+	if token.deprel == "pcomp":
+		if nGramForward(token,sent,2) in mltWrdPcompPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+
+	if token.deprel == "advlcls":
+		if nGramForward(token,sent,2) in mltWrdAdvclsPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+
+	if token.deprel == "amod":
+		if nGramForward(token,sent,2) in mltWrdAmodPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+
+	if token.deprel == "npadvmod":
+		if nGramForward(token,sent,2) in mltWrdNpadvmodPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+
+	if token.deprel == "npadvmod":
+		if nGramForward(token,sent,2) in mltWrdNpadvmodPrep: #deal with two-word multiword prepositions first
+			if sent[token.idx+1].deprel in ["prep"] and token.headidx != sent[token.idx+1].idx:
+				sent[token.idx+1].headidx = token.headidx #change dependency structure if advmod is not the dep of the prep
+			token.lxgrtag = "inphrsl"
+			token.cat1 = None
+			token.deprel = "goeswith"
+			token.headidx = token.idx+1
+
+	
+	if nGramMiddle(token,sent,2,0) in mltWrdPrpThreeAdvmodAdvmodMark: #"as far as - subordinator"
+		if token.deprel == "mark":
+			#adjust phrase, etc.
+			sent[token.headidx].headidx = sent[token.idx-1].headidx #adjust head idx of clause to appropriate location
+			#adjust first word
+			sent[token.idx-2].lxgrtag = "csphrsl"
+			# sent[token.idx-2].cat1 = None
+			sent[token.idx-2].headidx = token.idx
+			sent[token.idx-2].deprel = "goeswith"
+			# sent[token.idx-2].cxtag = None
+			#adjust second word
+			sent[token.idx-1].lxgrtag = "csphrsl"
+			sent[token.idx-1].cat1 = None
+			sent[token.idx-1].headidx = token.idx
+			sent[token.idx-1].deprel = "goeswith"
+			sent[token.idx-1].cxtag = None
+			#adjust third word
+			# token.lxgrtag = "in"
+			# token.cat1 = None
+			# token.deprel = "prep"
+		if token.deprel == "prep": #used as preposition
+			token.headidx = sent[token.idx-1].headidx #assign head to appropriate location
+			sent[token.idx-2].lxgrtag = "inphrsl"
+			# sent[token.idx-2].cat1 = None
+			sent[token.idx-2].headidx = token.idx
+			sent[token.idx-2].deprel = "goeswith"
+			# sent[token.idx-2].cxtag = None
+			#adjust second word
+			sent[token.idx-1].lxgrtag = "inphrsl"
+			# sent[token.idx-1].cat1 = None
+			sent[token.idx-1].headidx = token.idx
+			sent[token.idx-1].deprel = "goeswith"
+			# sent[token.idx-1].cxtag = None
+			#adjust third word
+			# token.lxgrtag = "in"
+			# token.cat1 = None
+			# token.deprel = "prep"
+	if nGramMiddle(token,sent,2,0) in mltWrdPrpThreeMarkAdvclPrep:
+		token.headidx = sent[token.idx-1].headidx #assign head to appropriate location
+		makeNone(sent,token.idx-1)
+		sent[token.idx-1].headidx = token.idx
+		sent[token.idx-1].lxgrtag = "inphrsl"
+		sent[token.idx-1].deprel = "goeswith"
+		# makeNone(sent,token.idx-2)
+		sent[token.idx-2].headidx = token.idx
+		sent[token.idx-2].lxgrtag = "inphrsl"
+		sent[token.idx-2].deprel = "goeswith"
+
+	if nGramMiddle(token,sent,2,0) in mltWrdPrpThreePrepPobjPrep:
+		token.headidx = sent[token.idx-2].headidx #assign head to appropriate location
+		# makeNone(sent,token.idx-1)
+		sent[token.idx-1].headidx = token.idx
+		sent[token.idx-1].lxgrtag = "inphrsl"
+		sent[token.idx-1].deprel = "goeswith"
+		# makeNone(sent,token.idx-2)
+		sent[token.idx-2].headidx = token.idx
+		sent[token.idx-2].lxgrtag = "inphrsl"
+		sent[token.idx-2].deprel = "goeswith"
+
+	if nGramMiddle(token,sent,3,0) in mltWrdPrpFourPrepDetPobjPrep:
+		token.headidx = sent[token.idx-3].headidx #assign head to appropriate location
+		# makeNone(sent,token.idx-1)
+		sent[token.idx-1].headidx = token.idx
+		sent[token.idx-1].lxgrtag = "inphrsl"
+		sent[token.idx-1].deprel = "goeswith"
+		# makeNone(sent,token.idx-2)
+		sent[token.idx-2].headidx = token.idx
+		sent[token.idx-2].lxgrtag = "inphrsl"
+		sent[token.idx-2].deprel = "goeswith"
+		
+		sent[token.idx-3].headidx = token.idx
+		sent[token.idx-3].lxgrtag = "inphrsl"
+		sent[token.idx-3].deprel = "goeswith"
+
+def multiWordSubordinators(token,sent):
+	if token.deprel in ["mark"] and nGramMiddle(sent[token.idx],sent,1,0) in ["as if","as though","so that","in that"]:
+		sent[token.idx-1].deprel = "goeswith"
+		sent[token.idx-1].cat1  = "csphrsl"
+
+	elif token.xpos[:2] in ["VB","MD"] and token.deprel not in ["amod","acomp","aux","auxpass","prep"]: #added "MD" to account for sentences such as "I think I probably could"; added "prep" to avoid multi-word prepositions
+		if token.deprel in ["acl"]:
+			if sent[token.headidx].deprel in ["pobj"]:
+				# print(nGramMiddle(sent[token.headidx],sent,1,0))
+				# print(nGramMiddle(sent[token.headidx],sent,1,1))
+				if nGramMiddle(sent[token.headidx],sent,1,0) in ["in case"]: #multiword adverbial
+					#token.cat5 = "advlcls"
+					lastWordLoc = token.headidx
+					token.deprel = "advcl"
+					token.headidx = sent[lastWordLoc-1].headidx #change head to appropriate location
+					sent[lastWordLoc].lxgrtag  = "cs"
+					sent[lastWordLoc].cat1  = "csphrsl"
+					sent[lastWordLoc].deprel = "mark"
+					sent[lastWordLoc].headidx = token.idx
+					sent[lastWordLoc-1].deprel = "goeswith"
+					sent[lastWordLoc-1].headidx = lastWordLoc
+					sent[lastWordLoc-1].cat1  = "csphrsl"
+
+				elif nGramMiddle(sent[token.headidx],sent,1,1) in ["on condition that","in order that"]:
+					#token.cat5 = "advlcls"
+					middleWordLoc = token.headidx
+					token.deprel = "advcl"
+					token.headidx = sent[middleWordLoc-1].headidx
+					sent[middleWordLoc+1].headidx = token.idx
+					sent[middleWordLoc+1].deprel = "mark"
+					sent[middleWordLoc].lxgrtag  = "cs"
+					sent[middleWordLoc].deprel = "goeswith"
+					sent[middleWordLoc].headidx = middleWordLoc+1
+					sent[middleWordLoc].cat1  = "csphrsl"
+					sent[middleWordLoc-1].cat1  = "csphrsl"
+					sent[middleWordLoc-1].deprel = "goeswith"
+					sent[middleWordLoc-1].headidx = middleWordLoc+1
+
+				elif nGramMiddle(sent[token.headidx],sent,1,1) in ["in order to"]: #multiword "to phrs"
+					middleWordLoc = token.headidx
+					token.deprel = "advcl"
+					token.headidx = sent[middleWordLoc-1].headidx
+					sent[middleWordLoc-1].cat1  = "tophrs"
+					sent[middleWordLoc-1].headidx = middleWordLoc+1
+					sent[middleWordLoc-1].deprel = "goeswith"
+					sent[middleWordLoc].cat1  = "tophrs"
+					sent[middleWordLoc].headidx = middleWordLoc+1
+					sent[middleWordLoc].deprel = "goeswith"
+
+				### Kris Start Here!!! ###
+				elif nGramMiddle(sent[token.headidx],sent,2,1) in ["on the condition that","in the event that"]:
+					thirdWordLoc = token.headidx
+					token.deprel = "advcl"
+					token.headidx = sent[thirdWordLoc-2].headidx
+					sent[thirdWordLoc+1].headidx = token.idx
+					sent[thirdWordLoc+1].deprel = "mark"
+					sent[thirdWordLoc].lxgrtag  = "cs"
+					sent[thirdWordLoc].deprel = "goeswith"
+					sent[thirdWordLoc].headidx = thirdWordLoc+1
+					sent[thirdWordLoc].cat1  = "csphrsl"
+					sent[thirdWordLoc-1].cat1  = "csphrsl"
+					sent[thirdWordLoc-1].deprel = "goeswith"
+					sent[thirdWordLoc-1].headidx = thirdWordLoc+1
+					sent[thirdWordLoc-2].cat1  = "csphrsl"
+					sent[thirdWordLoc-2].deprel = "goeswith"
+					sent[thirdWordLoc-2].headidx = thirdWordLoc+1
+
+
+def reassignHeads(headidxOld,headidxNew,sent):
+	for token in sent:
+		if token.headidx == headidxOld and token.deprel not in ["goeswith"]:
+			token.headidx = headidxNew
+
+def semiModalAdjust(token,sent): #adjust tags based on semi-modals
+	if token.deprel in ["xcomp","advcl"]:
+		if nGramMiddle(sent[token.headidx],sent,1,1) in ["have got to", "had got to"] or nGramMiddleBe(sent[token.headidx],sent,1,1) in ["be supposed to","be going to"]:
+			oldHead = token.headidx
+			newHead = token.idx
+			token.headidx = sent[oldHead].headidx #reassign head to previous modal head
+			token.deprel = sent[oldHead].deprel #reassign head to previous modal head
+			sent[oldHead].deprel = "goeswith"
+			sent[oldHead].xpos = "MD"
+			sent[oldHead].headidx = oldHead+1
+			sent[oldHead+1].deprel = "aux"
+			sent[oldHead+1].xpos = "MD"
+			sent[oldHead-1].deprel = "goeswith"
+			sent[oldHead-1].xpos = "MD"
+			sent[oldHead-1].headidx = oldHead+1
+			reassignHeads(oldHead,newHead,sent) #reassign other heads from modal to main verb
+
+		elif nGramMiddleBe(sent[token.headidx],sent,1,1) in ["be about to"]:
+			oldHeadBe = token.headidx-1
+			oldHeadAbout = token.headidx
+			newHead = token.idx
+			token.headidx = sent[oldHeadBe].headidx #reassign head to previous modal head
+			token.deprel = sent[oldHeadBe].deprel #reassign head to previous modal head
+			sent[oldHeadAbout].deprel = "goeswith"
+			sent[oldHeadAbout].xpos = "MD"
+			sent[oldHeadAbout].headidx = oldHeadAbout+1
+			sent[oldHeadAbout+1].deprel = "aux"
+			sent[oldHeadAbout+1].xpos = "MD"
+			sent[oldHeadAbout-1].deprel = "goeswith"
+			sent[oldHeadAbout-1].xpos = "MD"
+			sent[oldHeadAbout-1].headidx = oldHeadAbout+1
+			reassignHeads(oldHeadBe,newHead,sent) #reassign other heads from modal to main verb
+
+		elif nGramMiddle(sent[token.headidx],sent,0,1) in ["have to","had to","got to", "ought to","got ta","gon na","used to"] and nGramMiddleBe(sent[token.headidx],sent,1,1) not in ["be used to"]: #and sent[token.headidx].deprel not in "goeswith"
+			oldHead = token.headidx
+			newHead = token.idx
+			token.headidx = sent[oldHead].headidx #reassign head to previous modal head
+			token.deprel = sent[oldHead].deprel #reassign head to previous modal head
+			sent[oldHead].deprel = "goeswith"
+			sent[oldHead].xpos = "MD"
+			sent[oldHead].headidx = oldHead+1
+			sent[oldHead+1].deprel = "aux"
+			sent[oldHead+1].xpos = "MD"
+			reassignHeads(oldHead,newHead,sent) #reassign other heads from modal to main verb
+
+
 def nouns(token,nominalStopList = nominal_stop): #revised 2022-11-22; This is probably overly greedy. It was filtered using frequent candidates in T2KSWAL and TMLE
 	if token.xpos[:2] == "NN":
 	#if token.upos in ["NOUN", "PROPN"]:
@@ -243,7 +648,7 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 def verbInfo(token,sent): #this is to help solve a problem with conjugated verb phrases
 	cat2 = None
 	#this is an ordered list of POS tags for the main verb and auxs represented in the VP
-	if token.xpos[:2] in ["VB","MD"] and token.deprel not in ["amod","acomp","aux","auxpass"]:
+	if token.xpos[:2] in ["VB","MD"] and token.deprel not in ["amod","acomp","aux","auxpass","prep"]:
 		vp_pos = [x.xpos for x in sent if (x.headidx == token.idx and x.deprel in ["aux","auxpass"]) or x.idx == token.idx]
 		#print(vp_pos)
 		if "MD" in vp_pos:
@@ -264,7 +669,7 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 	that0_list = "check consider ensure illustrate fear say assume understand hold appreciate insist feel reveal indicate wish decide express follow suggest saw direct pray observe record imagine see think show confirm ask meant acknowledge recognize need accept contend come maintain believe claim verify demonstrate learn hope thought reflect deduce prove find deny wrote read repeat remember admit adds advise compute reach trust yield state describe realize expect mean report know stress note told held explain hear gather establish suppose found use fancy submit doubt felt".split(" ")
 	
 	#don't tag verbs functioning as adjectives as verbs; only tag main verbs
-	if token.xpos[:2] in ["VB","MD"] and token.deprel not in ["amod","acomp","aux","auxpass"]: #added "MD" to account for sentences such as "I think I probably could"
+	if token.xpos[:2] in ["VB","MD"] and token.deprel not in ["amod","acomp","aux","auxpass","prep"]: #added "MD" to account for sentences such as "I think I probably could"; added "prep" to avoid multi-word prepositions
 	#if token.upos in ["VERB","AUX"] and token.deprel not in ["amod","acomp","aux","auxpass"]: 
 		token.lxgrtag = "vbmain"
 		if token.lemma == "be": #need to add "+ NP" frames; need to deal with negation. This is kind of a mess
@@ -319,8 +724,19 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 			token.cat4 = "active"
 
 		### cat5 analysis
-		if token.deprel in ["ccomp","csubj","pcomp","xcomp"]: 
+		if token.deprel in ["ccomp","csubj","xcomp"]: 
 			token.cat5 = "compcls"
+		elif token.deprel in ["pcomp"]: #deal with some multi-word adverbs
+			#print(nGramForward(sent[token.headidx],sent,2))
+			if nGramForward(sent[token.headidx],sent,2) in ["provided that","except that","save that"]:
+				token.cat5 = "advlcls"
+				sent[token.headidx].lxgrtag  = "cs"
+				sent[token.headidx].cat1  = "csphrsl"
+				sent[token.headidx+1].lxgrtag  = "csphrsl" #convert to 
+				sent[token.headidx+1].cat1  = "csphrsl"
+				sent[token.headidx+1].cxtag = None
+			else:
+				token.cat5 = "compcls"
 		elif token.deprel == "advcl":
 			if sent[token.headidx].xpos[:2] in ["JJ"]:
 				token.cat5 = "jmod_cls"
@@ -329,7 +745,8 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		elif token.deprel in ["relcl"]:
 			token.cat5 = "nmod_cls"
 		elif token.deprel in ["acl"]: #updated 2024-10-01
-			if sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
+			if sent[token.headidx].xpos[:2] in ["NN","PR"]:
+			#if sent[token.headidx].upos in ["NOUN","PROPN","PRON"]:
 				token.cat5 = "nmod_cls"
 			elif sent[token.headidx].xpos[:2] in ["JJ"]:
 				token.cat5 = "jmod_cls"
@@ -351,18 +768,22 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 
 		### wh clause: ###
 		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
+			conjDepList = [x.idx for x in sent if x.headidx == token.idx and x.deprel in ["conj"] and verbInfo(x,sent) in ["nonfinite"]]
+
 			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
 				token.cat6 = "whcls"
 			######
 			# catch "wh" words that are attached to another verb in the verb phrase [updated on 20241028]
-			conjDepList = [x.idx for x in sent if x.headidx == token.idx and x.deprel in ["conj"] and verbInfo(x,sent) in ["nonfinite"]]
-			if len(conjDepList) > 0:
+			elif len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["mark"] and x.xpos in ["IN"] and x.word.lower() in ["whether"]]) > 0: #added on 2024-11-19
+				token.cat6 = "whcls"
+
+			elif len(conjDepList) > 0:
 				if len([x.word.lower() for x in sent if x.headidx == conjDepList[-1] and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0:
 					token.cat6 = "whcls"
 			######
 		if token.cat2 == "nonfinite":
 			### to clause ###
-			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO" and sent[x.idx-1].lemma not in ["order"]]: #and sent[x.idx-1].lemma not in ["seem","have","need","want","order"] Doug didn't like these as semi-modals - kept in "order" to catch "in order to"
+			if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.xpos == "TO"]: # and sent[x.idx-1].lemma not in ["order"] #and sent[x.idx-1].lemma not in ["seem","have","need","want","order"] Doug didn't like these as semi-modals - kept in "order" to catch "in order to"
 			#if "to" in [x.word.lower() for x in sent if x.headidx == token.idx and x.idx < token.idx and x.upos == "PART"]:
 				token.cat6 = "tocls" #probably needs more work
 			### ing clause ###
@@ -402,7 +823,7 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 			if token.deprel == "relcl":
 				token.cat7 = "rel"
 			elif token.deprel in ["acl"]:
-				if sent[token.headidx].upos in ["NOUN","PROPN","PRON"]: #this may be too restrictive; updated 20241001
+				if sent[token.headidx].xpos[:2] in ["NN","PR"]: #this may be too restrictive; updated 20241220 [avoided upos]
 					token.cat7 = "ncomp"
 		if token.cat5 in ["jmod_cls"] and sent[token.headidx].xpos[:2] == "JJ":
 			if "so" in [x.word.lower for x in sent if x.headidx == token.headidx and x.idx < token.idx]:
@@ -421,7 +842,7 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 				token.cat7 = "conditional"
 			elif mark in ["though","although","while"]:
 				token.cat7 = "concessive"
-			elif mark != "that":
+			elif mark not in ["that","whether"]:
 				token.cat7 = "other_advl"
 
 		######################
@@ -572,8 +993,10 @@ def advanced_pronoun(token,sent):	#updated 2022-11-02
 			else:
 				token.cat2 = "pl"
 
+
+
 def prepositions(token,sent):
-	if token.deprel == "prep":
+	if token.deprel == "prep" and token.lxgrtag not in ["inphrsl"]: #ignore first word in phrasal prepositions
 		if token.xpos[:2] not in ["VB"]:
 			token.lxgrtag = "in"
 		if sent[token.headidx].xpos[:2] == "VB":
@@ -607,6 +1030,7 @@ def coordinators(token,sent): #takes spacy's definition of "cc"
 				token.cat1 = "phrs"
 
 def subordinators(token,sent):
+	#TODO: Add categories for multiword subordinators here
 	if token.deprel == "mark" and token.word.lower() not in ["that", "which","who","whom","whose","what","how","where","why","when"]:
 		token.lxgrtag = "cs"
 		if token.word.lower() == "because":
@@ -641,7 +1065,7 @@ def that_wh(token,sent): #tweaked version
 			token.lxgrtag = "relpro"
 			token.cat1 = "relpro_that"
 		elif sent[token.headidx].deprel in ["acl"]: #updated 20241001
-			if sent[sent[token.headidx].headidx].upos in ["NOUN","PROPN","PRON"]: #this may be too restrictive; updated 20241001
+			if sent[sent[token.headidx].headidx].xpos[:2] in ["NN","PR"]: #this may be too restrictive; updated 20241001
 				token.lxgrtag = "relpro"
 				token.cat1 = "relpro_that"
 			elif sent[sent[token.headidx].headidx].xpos[:2] == "JJ": #updated 20241001
@@ -726,15 +1150,15 @@ def complexity(token,sent):
 		token.cxtag = "edcls+advl"
 	
 	if token.cat6 in ["tocls"] and token.deprel in ["xcomp"]: #may need more refining
-		if sent[token.headidx].upos in ["VERB"]: #updated 2024-10-08
+		if sent[token.headidx].xpos[:2] in ["VB"]: #updated 2024-10-08
 			token.cxtag = "tocls+vcomp"
-		elif sent[token.headidx].upos in ["NOUN"]: #need to further test this
+		elif sent[token.headidx].xpos[:2] in ["NN"]: #need to further test this
 			token.cxtag = "tocls+rel" 
 
 	if token.cat6 in ["ingcls"] and token.deprel in ["xcomp"]:
-		if sent[token.headidx].upos in ["VERB"]: #updated 2024-10-08
+		if sent[token.headidx].xpos[:2] in ["VB"]: #updated 2024-10-08
 			token.cxtag = "ingcls+vcomp"
-		elif sent[token.headidx].upos in ["NOUN"]: #need to further test this
+		elif sent[token.headidx].xpos[:2] in ["NN"]: #need to further test this
 			token.cxtag = "ingcls+rel"
 	
 	if token.cat5 in ["nmod_cls"] and token.cat6 in ["edcls"] and token.cat7 in ["rel","ncomp"]:
@@ -769,17 +1193,18 @@ def complexity(token,sent):
 		if token.cat1 in ["attr"] and token.idx < token.headidx:
 			token.cxtag = "attr+npremod"
 		if token.cat3 in ["npremod"]:
-			if token.xpos in ["NNP","NNPS"] and sent[token.headidx].xpos in ["NNP","NNPS"]:
+			if token.xpos in ["NNP","NNPS"] and sent[token.headidx].xpos in ["NNP","NNPS"]: #consider constraining NNP + NN*
 				nnpremod = False #this is a dummy/unused variable
 			else:
-				token.cxtag = "nn+npremod" #this tag is probably redundant
+				if len(token.word) > 1: #added on 2025-01-02
+					token.cxtag = "nn+npremod" 
 	elif token.deprel in ["conj"] and token.xpos in ["JJ","VBN"] and sent[token.headidx].cxtag == "attr+npremod":
 		token.cat1 = "attr"
 		token.cxtag = "attr+npremod"
 	#To-Do: add code to catch coordinated premodifying adjective phrases (they form a chain of "conj" relations)
 	if token.lxgrtag in ["in"] and token.headdeprel not in ["npadvmod"]: #the "and" statement is an attempt to avoid constructions such as "bit by bit" and "sentence to sentence" being counted here 
 		if token.idx > token.headidx and token.cat1 in ["nmod"]:
-			if token.lemma == "of":
+			if token.lemma == "of" and token.idx >= 1 and sent[token.idx-1].lxgrtag not in ["inphrsl"]:
 				token.cxtag = "of+npostmod"
 			else:
 				token.cxtag = "in+npostmod"
@@ -805,113 +1230,6 @@ def complexity(token,sent):
 	if token.cat3 in ["sgen"]: #added in v 05_08
 		token.cxtag = "s+gen"
 
-def changeToModal(token,sent,targetidx = 2):
-	sent[token.idx-targetidx].lxgrtag = "vbaux" #change main tag
-	sent[token.idx-targetidx].cat1 = "semimod" #change cat1 tag
-	token.cxtag = sent[token.idx-targetidx].cxtag #reassign cxtag
-	token.cat2 = "vp_w_modal" #reassign category tag
-	token.cat3 = sent[token.idx-targetidx].cat3 #reassign category tag
-	#token.cat4 = sent[token.idx-targetidx].cat4 #reassign category tag
-	token.cat5 = sent[token.idx-targetidx].cat5 #reassign category tag
-	token.cat6 = sent[token.idx-targetidx].cat6 #reassign category tag
-	token.cat7 = sent[token.idx-targetidx].cat7 #reassign category tag
-	token.cat8 = sent[token.idx-targetidx].cat8 #reassign category tag
-	
-	#deal with complementizer deletion issues
-	if token.cat8 == "compdel":
-		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel in ["mark","nsubj","nsubjpass"]]:
-			if token.cat5 in ["nmod_cls"]:
-				token.cat6 = "thatcls"
-				token.cat8 = None
-
-		if "that" in [x.word.lower() for x in sent if x.word.lower() == "that" and x.headidx == token.idx and x.deprel == "mark"]:
-			if token.cat5 in ["compcls","jmod_cls"]:
-				token.cat6 = "thatcls"
-				token.cat8 = None
-
-		### wh clause: ###
-		if token.cat5 in ["compcls","nmod_cls","advlcls"]:
-			if len([x.word.lower() for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass","advmod","attr","dep","dobj"] and x.xpos in ["WDT","WP", "WP$", "WRB"] and x.word.lower() != "that"]) > 0: #note that "dep" might cause issues. added on 2024-10-03
-				token.cat6 = "whcls"
-				token.cat8 = None
-		
-		if token.cat7 in ["vcomp"]:
-			if token.cat6 == "whcls":
-				token.cxtag = "whcls+vcomp"
-			elif token.cat6 == "thatcls":
-				token.cxtag = "thatcls+vcomp"
-	#add cat8?
-	sent[token.idx-targetidx].cxtag = None #clean up old tags
-	sent[token.idx-targetidx].cat2 = None #clean up old tags
-	sent[token.idx-targetidx].cat3 = None #clean up old tags
-	sent[token.idx-targetidx].cat4 = None #clean up old tags
-	sent[token.idx-targetidx].cat5 = None #clean up old tags
-	sent[token.idx-targetidx].cat6 = None #clean up old tags
-	sent[token.idx-targetidx].cat7 = None #clean up old tags
-	sent[token.idx-targetidx].cat8 = None #clean up old tags
-
-def semiModalAdjust(token,sent): #adjust tags based on semi-modals
-	if token.lxgrtag in ["vbmain"]:
-		passive = False
-		threeWord = False
-		semiModalL = ["have to","had to","got to", "ought to"]
-		# already treated by spacy as modal: ["got ta","gon na"]
-		# "gon na" causes issues - future development could iron out these bugs
-		semiModalThreeL = ["have got to", "had got to"]
-		semModalBeL = ["be supposed to","be going to"]
-		semModalAboutTo = ["be about to"]
-		semModalUsedTo = ["used to"]
-		#Need to add rules to deal with passive constructions
-		if token.idx >=1 and sent[token.idx-1].lemma == "be" and sent[token.idx-1].deprel in ["auxpass"]:
-			passive = True
-			if token.idx >= 4:
-				modTestL = sent[token.idx-4:token.idx-1]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				modTestBeStr = " ".join([modTestL[0].lemma.lower(),modTestL[1].word.lower(),modTestL[2].word.lower()])
-				if modTestStr in semiModalThreeL: #make adjustments
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif modTestBeStr in semModalBeL:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif modTestBeStr in semModalAboutTo:
-					threeWord = True
-					changeToModal(token,sent,4) #make changes
-				elif " ".join(modTestBeStr.split(" ")[1:]) in semModalUsedTo and modTestBeStr.split(" ")[0] not in ["be"]:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-			if token.idx >= 3 and threeWord == False:
-				modTestL = sent[token.idx-3:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				if modTestStr in semiModalL: #make adjustments
-					changeToModal(token,sent,3)
-		if passive == False:
-		#test longer sequences before shorter ones:
-			if token.idx >= 3:
-				modTestL = sent[token.idx-3:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				modTestBeStr = " ".join([modTestL[0].lemma.lower(),modTestL[1].word.lower(),modTestL[2].word.lower()])
-				if modTestStr in semiModalThreeL: #make adjustments
-					threeWord = True
-					changeToModal(token,sent) #make changes
-				elif modTestBeStr in semModalBeL:
-					threeWord = True
-					changeToModal(token,sent) #make changes
-				elif modTestBeStr in semModalAboutTo:
-					threeWord = True
-					changeToModal(token,sent,3) #make changes
-				elif " ".join(modTestBeStr.split(" ")[1:]) in semModalUsedTo and modTestBeStr.split(" ")[0] not in ["be"]:
-					threeWord = True
-					changeToModal(token,sent,2) #make changes
-
-			if token.idx >= 2 and threeWord == False:
-				modTestL = sent[token.idx-2:token.idx]
-				modTestStr = " ".join([x.word.lower() for x in modTestL])
-				if modTestStr in semiModalL: #make adjustments
-					changeToModal(token,sent)
-		#add code to fix missing "wh" or "that complementizer?"
-			#TO DO: need to fix "gonna"
-
 def coordinatedClauseAdjust(token,sent): #deal with coordinate clauses and wh-words in coordinated VPs
 	#deal with coordinated clauses
 	if token.lxgrtag in ["vbmain"] and token.deprel in ["conj"] and token.cat2 not in ["nonfinite"]:
@@ -926,10 +1244,21 @@ def coordinatedClauseAdjust(token,sent): #deal with coordinate clauses and wh-wo
 
 #### These functions use the previous functions to conduct tagging and tallying of lexicogramamtical features ###
 
-def preprocess(text): #takes raw text, processes with spacy, then outputs a list of sentences filled with tokenObjects
+
+# test = processConllu(open('/Users/kristopherkyle/Desktop/Programming/Corpora/dep_parse_onto/bc-cctv-00-cctv_0000.parse.dep').read().strip())
+# for token in test[0].sents:
+# 	print(token.text, token.lemma_)
+
+# structTest = nlp("This is a sample text.")
+# for token in structTest:
+# 	print(token.head)
+def preprocess(text,conllu = False): #takes raw text, processes with spacy, then outputs a list of sentences filled with tokenObjects
 	sentCounter = 0
 	output = []
-	doc = nlp(text)
+	if conllu == True:
+		doc = processConllu(text)
+	else:
+		doc = nlp(text)
 	for sent in doc.sents:
 		sentObj = sentBlank() #blank sentence object
 		sentObj.meta.append("#sentid = " + str(sentCounter))
@@ -952,28 +1281,38 @@ def preprocess(text): #takes raw text, processes with spacy, then outputs a list
 		sentCounter += 1
 	return(output)
 
-def tag(input): #tags :)
+def tag(input,conllu = False): #tags :)
 	sents = []
 	if isinstance(input,str) == True:
-		input = preprocess(input)
+		input = preprocess(input,conllu)
 	for sent in input:
 	#for sent in preprocess(sstring):
 		for token in sent.tokens:
 			#print(token.idx,token.word,token.lemma,token.deprel,token.headidx)
-			personal_pronouns(token)
-			advanced_pronoun(token,sent.tokens)
-			adverbs(token,sent.tokens)
-			adjectives(token)
-			nouns(token)
-			verbs(token,sent.tokens)
-			prepositions(token,sent.tokens)
-			coordinators(token,sent.tokens)
-			subordinators(token,sent.tokens)
-			determiners(token)
-			that_wh(token,sent.tokens)
-			complexity(token,sent.tokens)
+			#deal with multiword units first
+			multiWordPrepositions(token,sent.tokens)
+			multiWordSubordinators(token,sent.tokens)
 			semiModalAdjust(token,sent.tokens)
-			coordinatedClauseAdjust(token,sent.tokens)
+		
+		for token in sent.tokens:
+			if token.deprel in ["goeswith"]:
+				continue
+			else:
+				personal_pronouns(token)
+				advanced_pronoun(token,sent.tokens)
+				adverbs(token,sent.tokens)
+				adjectives(token)
+				nouns(token)
+				verbs(token,sent.tokens)
+				#multiWordPrepositions(token,sent.tokens) 
+				prepositions(token,sent.tokens)
+				coordinators(token,sent.tokens)
+				subordinators(token,sent.tokens)
+				determiners(token)
+				that_wh(token,sent.tokens)
+				complexity(token,sent.tokens)
+				# semiModalAdjust(token,sent.tokens)
+				coordinatedClauseAdjust(token,sent.tokens)
 		sents.append(sent)
 	return(sents)
 
@@ -1099,6 +1438,7 @@ def readConll(fname):
 	outl = [] #list of sentObjs
 	sents = open(fname,errors = "ignore").read().strip().split("\n\n")
 	for sent in sents:
+		skipSent = False
 		sentObj = sentBlank() #create sentence object instance
 
 		for token in sent.split("\n"):
@@ -1112,6 +1452,8 @@ def readConll(fname):
 				tokObj.word = info[1]
 				tokObj.lemma = info[2].lower()
 				tokObj.xpos = info[3]
+				if info[3] == "XX":
+					skipSent = True
 				#no upos :(
 				tokObj.deprel = info[6]
 				if tokObj.deprel == "root":
@@ -1120,12 +1462,277 @@ def readConll(fname):
 					tokObj.headidx = int(info[5])-1
 				
 				sentObj.tokens.append(tokObj)
-		outl.append(sentObj)
+		if skipSent == False:
+			outl.append(sentObj)
 	return(outl)
+
+### Work on 20241219-20 ###
+#printer(tag(open('/Users/kristopherkyle/Desktop/Programming/Corpora/dep_parse_onto/bc-cctv-00-cctv_0000.parse.dep').read().strip(),conllu = True))
+def tagConlluFolder(loFnames):
+	folderOutput = []
+	for fname in loFnames:
+		print(fname.split("/")[-1])
+		fileOutput = tag(open(fname).read().strip(),conllu = True)
+		#printer(fileOutput,verbose = True)
+		folderOutput = folderOutput + fileOutput
+	return(folderOutput)
+
+def sentTokCount(procConllu):
+	nsents = 0
+	ntokens = 0
+	for sent in procConllu:
+		nsents +=1
+		for token in sent.tokens:
+			ntokens += 1
+	print(nsents,ntokens)
+
+def iobConvert(procConllu):
+	outL = [] #list of sents
+	for sent in procConllu:
+		sentL = []
+		for token in sent.tokens:
+			tokenL = []
+			tokenL.append(token.word)
+			tokenL.append(token.xpos)
+			if token.cxtag in ["None",None]:
+				tokenL.append("O")
+			else:
+				tokenL.append("I-"+token.cxtag)
+			sentL.append("|".join(tokenL))
+		outL.append(" ".join(sentL))
+	return(outL)
+
+def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234):
+	random.seed = rSeed
+	random.shuffle(loSentStr)
+	if nSamps != False:
+		targetSents = loSentStr[:nSamps]
+	else:
+		targetSents = loSentStr
+	nsents = len(targetSents)
+	train = targetSents[:int(nsents*splits[0])]
+	dev = targetSents[int(nsents*splits[0]):int(nsents*(splits[0]+splits[1]))]
+	test = targetSents[int(nsents*(splits[0]+splits[1])):]
+
+	print("train:",len(train),"sents")
+	print("dev:",len(dev),"sents")
+	print("test:",len(test),"sents")
+
+	with open(writeLoc +"train.iob", "w") as f:
+		f.write("\n".join(train))
+	with open(writeLoc +"dev.iob", "w") as f:
+		f.write("\n".join(dev))
+	with open(writeLoc +"test.iob", "w") as f:
+		f.write("\n".join(test))
+
+# #work on 2025-01-16
+# processedConllu = tagConlluFolder(glob.glob('/Users/kristopherkyle/Desktop/Programming/Corpora/dep_parse_onto/*.parse.dep'))
+# #Need to assign root head to itself (currently 0|-1)
+# sentTokCount(processedConllu)
+# processedConlluIob = iobConvert(processedConllu)
+# processedConlluIob[0]
+# len(processedConlluIob) #134739
+# #test with 10k sents
+# # import random
+# # #write 10k Sample
+# # writeIOB(processedConlluIob,'/Users/kristopherkyle/Desktop/Programming/TrainLxGrTgr/LxGr-10k-TRF-20241231/assets/',nSamps = 10000)
+# #write full (134k) Sample
+# writeIOB(processedConlluIob,'/Users/kristopherkyle/Desktop/Programming/TrainLxGrTgr/LxGr134k-TRF-20250116-059/assets/')
+
+# #work on 2024-12-31
+# processedConllu = tagConlluFolder(glob.glob('/Users/kristopherkyle/Desktop/Programming/Corpora/dep_parse_onto/*.parse.dep'))
+# #Need to assign root head to itself (currently 0|-1)
+# sentTokCount(processedConllu)
+# processedConlluIob = iobConvert(processedConllu)
+# processedConlluIob[0]
+# len(processedConlluIob) #134739
+# #test with 10k sents
+# import random
+# #write 10k Sample
+# writeIOB(processedConlluIob,'/Users/kristopherkyle/Desktop/Programming/TrainLxGrTgr/LxGr-10k-TRF-20241231/assets/',nSamps = 10000)
+# #write full (134k) Sample
+# writeIOB(processedConlluIob,'/Users/kristopherkyle/Desktop/Programming/TrainLxGrTgr/LxGr134k-TRF-20241231/assets/')
+
+
+# printer([processedConllu[0]],verbose = True)
+# print(processedConllu[0])
+
+
 
 #test conll
 #conllLoS = tag(readConll("sample_conll/bc-cctv-00-cctv_0000.parse.dep"))
 #printer(conllLoS[:3])
+
+### Tests on 2024-11-12 (sents from Hakyung)
+# printer(tag("As far as we know, the meeting is still scheduled for tomorrow."), verbose=True)
+# printer(tag("The meeting is still scheduled for tomorrow, as far as we know."), verbose=True)
+# printer(tag("I am going as far as Dallas."), verbose=True)
+
+### Not implemented ###
+# printer(tag("He contributed his ideas, as well as his time, to the project."), verbose=True) #not sure I agree with this one - it is functioning as a conjunction? = "and"; or perhaps it is analogous to "in addition to"
+### ###
+
+# printer(tag("The policy was implemented as opposed to being optional."), verbose=True)
+# printer(tag("The policy was implemented instead of being optional."), verbose=True)
+# printer(tag("The concept is valuable as distinct from its execution."), verbose=True)
+# printer(tag("The representation of space is necessary in order to be aware of things as distinct from ourselves and from each other"), verbose=True)
+
+# printer(tag("They offered extra services in exchange for a higher fee."), verbose=True)
+# printer(tag("She did the extra work in return for a day off."), verbose=True)
+# printer(tag("He built the structure by means of recycled materials."), verbose=True)
+# printer(tag("By virtue of her experience, she was appointed as the team lead."), verbose=True)
+# printer(tag("They traveled by way of several small towns."), verbose=True)
+# printer(tag("For lack of better options, we chose this route."), verbose=True)
+# printer(tag("For want of attention, the project stalled."), verbose=True)
+# printer(tag("The charity event was held in aid of local hospitals."), verbose=True)
+# printer(tag("They stored extra supplies in back of the main building."), verbose=True)
+# printer(tag("In case of rain, the event will be held indoors."), verbose=True)
+# printer(tag("She took control in charge of the emergency response."), verbose=True)
+# printer(tag("In consequence of the new policy, many changes were implemented."), verbose=True)
+# printer(tag("The proposal was accepted in favor of further negotiations."), verbose=True)
+# printer(tag("The statue stands prominently in front of the building."), verbose=True)
+# printer(tag("He accepted a gift in lieu of cash payment."), verbose=True)
+# printer(tag("The decision was made in light of recent findings."), verbose=True)
+# printer(tag("The organization was created in need of a better system."), verbose=True)
+# printer(tag("She took on new responsibilities in place of a promotion."), verbose=True)
+# printer(tag("The discussion focused on recent updates in respect of regulations."), verbose=True)
+# printer(tag("They went hiking in search of beautiful landscapes."), verbose=True)
+# printer(tag("She proceeded with the plan in spite of objections."), verbose=True)
+# printer(tag("The contract is specified in terms of annual renewals."), verbose=True)
+# printer(tag("The initiative was undertaken in view of the growing demand."), verbose=True)
+# printer(tag("The meeting was canceled on account of bad weather."), verbose=True)
+# printer(tag("She spoke passionately on behalf of her colleagues."), verbose=True)
+# printer(tag("The project was halted on grounds of safety concerns."), verbose=True)
+# printer(tag("The supplies were stacked on top of each other."), verbose=True)
+# printer(tag("They evaluated the project by reference to past results."), verbose=True)
+# printer(tag("The speech was inspiring in addition to being informative."), verbose=True)
+# printer(tag("The report was clear in contrast to the vague instructions."), verbose=True)
+# printer(tag("The decision was made in reference to previous cases."), verbose=True)
+# printer(tag("The new guidelines were created in regard to ethical standards."), verbose=True)
+# printer(tag("She considered the proposal in relation to the company's mission."), verbose=True)
+# printer(tag("They proceeded with the project with regard to potential risks."), verbose=True)
+# printer(tag("The updates were made with reference to customer feedback."), verbose=True)
+# printer(tag("The team made adjustments with respect to new requirements."), verbose=True)
+# printer(tag("The results are at variance with initial predictions."), verbose=True)
+# printer(tag("Their actions are in accordance with the agreement."), verbose=True)
+# printer(tag("They analyzed the results in comparison with the previous data."), verbose=True)
+# printer(tag("The product was tested in compliance with industry standards."), verbose=True)
+# printer(tag("The design was created in conformity with company guidelines."), verbose=True)
+# printer(tag("The company remains in contact with its partners."), verbose=True)
+# printer(tag("Their decisions are in line with company policies."), verbose=True)
+# printer(tag("The delay occurred as a result of unforeseen circumstances."), verbose=True)
+# printer(tag("He made sacrifices at the expense of his personal life."), verbose=True)
+# printer(tag("They moved abroad for the sake of their children’s education."), verbose=True)
+# printer(tag("The document was revised in the case of any errors."), verbose=True)
+# printer(tag("They activated the backup plan in the event of an emergency."), verbose=True)
+# printer(tag("The rules were reconsidered in the light of recent developments."), verbose=True)
+# printer(tag("He was dismissed on the grounds of misconduct."), verbose=True)
+# printer(tag("The issues were discussed on the ground of common interest."), verbose=True)
+# printer(tag("The meeting was arranged on the part of senior management."), verbose=True)
+# printer(tag("All employees attended with the exception of the manager."), verbose=True)
+# printer(tag("There is a park at the back of the office building."), verbose=True)
+# printer(tag("They gathered in the middle of the plaza."), verbose=True)
+
+### Tests on 2024-11-06 (multi-word infinitives)
+# #fixed:
+# printer(tag("You don't have to live under the same laws as a foreigner in order to trade with him."),verbose = True) #spacy tags mark+mark #not a problem
+# #works, but may need to clean up phrasal bits (TO DO)
+# printer(tag("Each has the job of writing his chapter so as to make the novel being constructed the best it can be."),verbose = True) #spacy tags mark+mark #not a problem
+
+### Tests on 2024-11-06 tests on multi-word adverbials
+
+#minor issues (change tag to cs) Done
+# printer(tag("He acted as if I owed him."),verbose = True) #spacy tags mark+mark #not a problem
+# printer(tag("He acted as though I owed him."),verbose = True) #spacy tags mark+mark
+# printer(tag("I came to the party so that I could eat pizza."),verbose = True) #spacy tags mark+mark
+# printer(tag("I was fortunate in that I had friends."),verbose = True) #spacy tags mark+mark
+#fixed:
+# printer(tag("Even though he loved pizza, he couldn't stay."),verbose = True) #spacy tags advmod+mark
+# printer(tag("The artist painted the scene such that it appeared almost lifelike in the dim light."),verbose = True) #spacy tags amod+mark
+# printer(tag("I will eat some pizza as long as it has pepperoni."),verbose = True) #spacy tags advmod+advmod+mark
+# printer(tag("He couldn't stay even though he loved pizza."),verbose = True) #spacy tags advmod+mark
+
+#causes problem with clause type identification (Fixed)
+# printer(tag("In case you didn't hear, I like pizza."),verbose = True) #spacy tags prep+pobj #introduces "acl"
+# printer(tag("If you didn't hear, I like pizza."),verbose = True) #spacy tags prep+pobj #introduces "acl"
+
+# printer(tag("In case I die, bury me with pizza."),verbose = True) #spacy tags prep+pobj
+# printer(tag("I like pizza, in case you didn't hear."),verbose = True) #spacy tags prep+pobj
+# printer(tag("I came to the party in order that I could eat pizza."),verbose = True) #spacy tags prep+pobj+mark #introduces "acl"
+# printer(tag("In the event that they run out of pizza, I am leaving."),verbose = True) #spacy tags prep+det+pobj+mark #introduces "acl"
+# printer(tag("I will come to the event on condition that there is pizza."),verbose = True) #spacy tags prep+pobj+mark #introduces "acl"
+# printer(tag("I will come to the event on the condition that there is pizza."),verbose = True) #spacy tags prep+pobj+mark #introduces "acl"
+
+#pcomp (fixed)
+# printer(tag("I will come to the event provided that there is pizza."),verbose = True) #spacy tags prep+mark #introduces "pcomp"
+# printer(tag("I wanted to go, except that they didn't have pizza."),verbose = True) #spacy tags prep+mark #introduces "pcomp"
+# printer(tag("The house was perfectly quiet, save that the wind occasionally rattled the windows."),verbose = True) #spacy tags prep+mark #introduces "pcomp"
+
+# #not quite sure (TO DO)
+# printer(tag("I will eat pizza rather than go to the event."),verbose = True) #spacy tags advmod+cc
+# printer(tag("But that he was poor, he would travel extensively."),verbose = True) #spacy tags cc+mark
+
+## "That" is an issue: ##
+
+###
+# printer(tag("As far as we know, the meeting is still scheduled for tomorrow."),verbose = True) #spacy tags as amod+prep
+
+### Tests on 2024-11-05 two-word prepositions
+# printer(tag("I love delicious foods such as pizza."),verbose = True) #spacy tags as amod+prep
+# printer(tag("As for Jack, he will eat pizza."),verbose = True) #spacy tags as prep+prep
+# printer(tag("He would die but for pizza."),verbose = True) #spacy tags as prep+prep
+# printer(tag("The pizza will be done as of this evening."),verbose = True) #spacy tags as prep+prep
+# printer(tag("Except for pizza, there is nothing good in this world."),verbose = True) #spacy tags as prep+prep
+# printer(tag("Save for pizza, there is nothing good in this world."),verbose = True) #spacy tags as prep+prep
+# printer(tag("Apart from pizza, there is nothing good in this world."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("There is nothing good in this world apart from pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("There is nothing good in this world apart from pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Aside from pizza, there is nothing good in this world."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("The pizza was identified as from Italy."),verbose = True) #spacy tags as prep+prep
+# printer(tag("He came away from the pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("He finished ahead of the pack."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("He survived because of the pizza."),verbose = True) #spacy tags as pcomp+prep
+# printer(tag("Because of the pizza he survived."),verbose = True) #spacy tags as pcomp+prep
+# printer(tag("The pizza was devoid of pepperoni."),verbose = True) #spacy tags as acomp+prep
+# printer(tag("This pizza was delicious, exclusive of the anchovies."),verbose = True) #spacy tags as acomp + prep
+# printer(tag("Exclusive of the anchovies, I like this pizza."),verbose = True) #spacy tags as advcls + prep (wrong)
+# printer(tag("The pizza will be ready inside of an hour."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Instead of salad, please give me pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Please give me pizza instead of salad."),verbose = True) #spacy tags as advmod+cc
+# printer(tag("Irrespective of the type, please give me pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Please give me pizza irrespective of the type."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("The pizza came out of the oven."),verbose = True) #spacy tags as prep+prep
+# printer(tag("They saw the pizza outside of the store"),verbose = True) #spacy tags as advmod+prep
+# printer(tag("I want to eat pizza regardless of its origins."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("We have spent upwards of three thousand dollars on this project."),verbose = True) #spacy tags as advmod+quantmod
+# printer(tag("We have spent upwards of three dollars on this project."),verbose = True) #spacy tags as advmod+quantmod
+# printer(tag("The pizza was void of any vegetables."),verbose = True) #spacy tags as acomp+prep
+# printer(tag("He was found void of any vegetables."),verbose = True) #spacy tags as acomp+prep
+# printer(tag("Depending on the outcome of the election, I might eat pizza."),verbose = True) #spacy tags as prep+prep
+# printer(tag("According to Tom, we will never find an answer."),verbose = True)#spacy tags as prep+prep
+# printer(tag("As to the solution, I have no idea."),verbose = True) #spacy tags as prep+prep
+# printer(tag("I found some ranch dressing close to the pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Contrary to popular opinion, I don't eat very much pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Due to its deliciousness, I eat a lot of pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("I live next to a pizza shop."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("We have transitioned on to the next project."),verbose = True) #spacy tags as prep+prep
+# printer(tag("I live opposite to a pizza shop."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Owing to its nutritional density, I eat pizza every day."),verbose = True) #spacy tags as advlcls+prep
+# printer(tag("Preliminary to moving on, we need to eat pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Previous to moving on, we need to eat pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Prior to moving on, we need to eat pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Relative to lasagna, pizza is healthy."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Subsequent to moving on, we need to eat pizza."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Thanks to the award, we now have money."),verbose = True) #spacy tags as prep+prep
+# printer(tag("The decision is up to the pizza monarch."),verbose = True) #spacy tags as prep+prep
+# printer(tag("I like pizza along with beer."),verbose = True) #spacy tags as prep+prep
+# printer(tag("I like pizza together with beer."),verbose = True) #spacy tags as advmod+prep
+# printer(tag("Let's go back to the start."),verbose = True) #spacy tags as advmod+prep
+
+# # Three word
+# printer(tag("As far as Boston there is great scenery."),verbose = True) #doesn't work
+
+
 
 ### Tests on 2024-10-28
 #printer(tag("But you can see how you can simulate and see what the expected payment is."),verbose = True)
@@ -1184,22 +1791,26 @@ def readConll(fname):
 #semiModalL = ["have to","had to","got to", "ought to"]
 # already treated by spacy as modal: ["got ta","gon na"]
 #moved "about to" to "BE about to"
-# "gon na" causes issues - future development could iron out these bugs
+# "gon na" causes issues - future development could iron out these bugs[fixed in version 05_51]
 # printer(tag("He said that they have to try."),verbose = True)
 # printer(tag("He said that they had to try."),verbose = True)
 # printer(tag("He said that they got to try."),verbose = True)
-# printer(tag("He said that they ought to try."),verbose = True)
+#printer(tag("He said that they ought to try."),verbose = True)
+# printer(tag("He said that they should try."),verbose = True)
+# printer(tag("He said that they ought to have tried."),verbose = True)
+
 # printer(tag("He said that they are gonna try"),verbose = True)
-# #three-word modals
+# printer(tag("He said that they gotta try"),verbose = True)
+
+#three-word modals
 # printer(tag("He said that they have got to try."),verbose = True)
 # printer(tag("He said that they had got to try."),verbose = True)
 
-# #be three-word modals
-# #semModalBeL = ["be supposed to","be going to","be about to"]
+#be three-word modals
 # printer(tag("He said that he was supposed to try."),verbose = True)
 # printer(tag("He said that he was going to try."),verbose = True)
 # printer(tag("He said that he was about to try."),verbose = True)
-# printer(tag("He said that that they used to try."),verbose = True)
+# printer(tag("He said that they used to try."),verbose = True)
 
 
 
