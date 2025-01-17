@@ -1,0 +1,64 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+		<title>Lexicogrammatical Tagger (LxGrTgr) BETA VERSION</title>
+		<style>
+		img {
+		width: 150;
+		height: auto;
+		}
+		p {
+  		padding: 10px;
+		}
+		.btn {
+		padding: 10px;
+		}
+		span, input, select {
+		margin: 5px 0 5px 15px; /* top right bottom left */
+		}
+		</style>
+	</head>
+
+	<body>
+		<nav class="navbar navbar-inverse">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">Lexicogrammatical Tagger (LxGrTgr) BETA VERSION</a>
+				</div>
+			</div>
+		</nav>
+
+	
+</div><!-- /.container -->
+
+<div class="container">
+		<p>To explore the output provided by LxGrTgr, type (or copy/paste) text into the text box and press the "Run LxGrTgr" button. For more information about the tagger, please visit <a href="https://github.com/kristopherkyle/LxGrTgr">the LxGrTgr Github page.</a><br><b>Please note:</b> This sample web application currently uses a reasonably accurate (and particularly fast) NLP model from Spacy (en_core_web_sm). For more accurate results, Spacy's slower and more resource instensive but more accurate en_core_web_trf model should be used.</p>
+		<p>Version .0559, updated 2025-01-16</p>
+
+
+		<div class="row">
+			<form action="." method="POST">
+				<textarea class="form-control" name="contents" placeholder="Enter a text here"></textarea>
+				<div class="row">
+				<input type="submit" class="btn btn-success" value="Run LxGrTgr">
+				</div>
+			</form>
+		</div>
+
+</div><!-- /.container -->
+
+	</body>
+</html>
+
+
