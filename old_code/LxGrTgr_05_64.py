@@ -851,7 +851,7 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 		token.cat1 = "prtcle"
 	if token.lxgrtag == "rb" and token.cat1 == None:
 		token.cat1 = "othr"
-	if token.deprel in ["npadvmod"] and token.word.lower() in ["yesterday","tomorrow"]: #added on 2025-02-21;updated on 2025-03-07
+	if token.deprel in ["npadvmod"] and token.text.lower() in ["yesterday","tomorrow"]: #added on 2025-02-21
 		token.lxgrtag = "rb"
 		token.deprel = "advmod"
 		token.xpos = "RB"
