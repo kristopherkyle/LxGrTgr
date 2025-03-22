@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.65.1"
-version_notes = "0.0.5.65.1 - Minor bug fix"
+version = "0.0.5.65"
+version_notes = "0.0.5.65 - Additional bug-fixes based on tag-checking (adverbs; linking adverbs)"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -38,18 +38,17 @@ import os #for making folders
 # import xml.etree.ElementTree as ET #for xml parsing
 from random import sample #for random samples
 import re #for regulat expressions
-from importlib_resources import files #for opening package files - need to include in package dependencies
+#from importlib_resources import files #for opening package files - need to include in package dependencies
 
 ### spacy
-print("Importing Spacy")
 import spacy #base NLP
-print("Spacy Successfully Loaded")
-from spacy.tokens import Doc
-from spacy.language import Language
-#nlp = spacy.load("en_core_web_sm") #load model
-print("Loading Transformer Model")
-nlp = spacy.load("en_core_web_trf")  #load model
-print("Transformer Model Successfully Loaded")
+# print("Spacy Successfully Loaded")
+# from spacy.tokens import Doc
+# from spacy.language import Language
+nlp = spacy.load("en_core_web_sm") #load model
+# print("Loading Transformer Model")
+# # nlp = spacy.load("en_core_web_trf")  #load model
+# print("Transformer Model Successfully Loaded")
 nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
@@ -73,13 +72,13 @@ class WhitespaceTokenizer(object):
 # prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # for Python package:
-nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
-prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
+# nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
+# prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # for web access and pc access:
-# os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
-# nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
-# prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
+#os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
+nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
+prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
 #phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
 ##########################################
 

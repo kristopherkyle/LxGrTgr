@@ -27,7 +27,7 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 """
 ### imports ####################################
 version = "0.0.5.65.1"
-version_notes = "0.0.5.65.1 - Minor bug fix"
+version_notes = "0.0.5.65.1 - minor bug fix"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later

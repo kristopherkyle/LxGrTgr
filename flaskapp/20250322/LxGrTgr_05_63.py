@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.65.1"
-version_notes = "0.0.5.65.1 - Minor bug fix"
+version = "0.0.5.63"
+version_notes = "0.0.5.63 - Minor Bug fixes"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -38,18 +38,17 @@ import os #for making folders
 # import xml.etree.ElementTree as ET #for xml parsing
 from random import sample #for random samples
 import re #for regulat expressions
-from importlib_resources import files #for opening package files - need to include in package dependencies
+#from importlib_resources import files #for opening package files - need to include in package dependencies
 
 ### spacy
-print("Importing Spacy")
 import spacy #base NLP
-print("Spacy Successfully Loaded")
-from spacy.tokens import Doc
-from spacy.language import Language
-#nlp = spacy.load("en_core_web_sm") #load model
-print("Loading Transformer Model")
-nlp = spacy.load("en_core_web_trf")  #load model
-print("Transformer Model Successfully Loaded")
+# print("Spacy Successfully Loaded")
+# from spacy.tokens import Doc
+# from spacy.language import Language
+nlp = spacy.load("en_core_web_sm") #load model
+# print("Loading Transformer Model")
+# # nlp = spacy.load("en_core_web_trf")  #load model
+# print("Transformer Model Successfully Loaded")
 nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
@@ -73,13 +72,13 @@ class WhitespaceTokenizer(object):
 # prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # for Python package:
-nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
-prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
+# nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
+# prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # for web access and pc access:
 # os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
-# nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
-# prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
+nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
+prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
 #phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
 ##########################################
 
@@ -268,7 +267,6 @@ def multiWordPrepositions(token,sent):
 	mltWrdNpadvmodPrep = ['thanks to']
 	mltWrdAmodPrep = ['such as']
 	mltWrdAdvmodQuantmod = ['upwards of'] # advmod+quantmod
-	#add "of course"?
 
 	#Three-word seqs
 	#mltWrdPrpThree = ['as far as', 'as well as', 'in exchange for', 'in return for', 'as distinct from', 'by means of', 'by virtue of', 'by way of', 'for lack of', 'for want of', 'in aid of', 'in back of', 'in case of', 'in charge of', 'in consequence of', 'in favour of', 'in front of', 'in lieu of', 'in light of', 'in need of', 'in place of', 'in respect of', 'in search of', 'in spite of',  'in terms of', 'in view of', 'on account of', 'on behalf of', 'on grounds of', 'on top of', 'as opposed to', 'by reference to', 'in addition to', 'in contrast to', 'in reference to', 'in regard to', 'in relation to', 'with regard to', 'with reference to', 'with respect to',  'at variance with', 'in accordance with', 'in comparison with', 'in compliance with',  'in conformity with', 'in contact with', 'in line with', 'as a result of', 'at the expense of', 'for the sake of', 'in the case of', 'in the event of', 'in the light of', 'on the grounds of',  'on the ground of', 'on the part of', 'with the exception of', 'at the back of', 'in the middle of',  'as well as', 'by means of', 'in addition to', 'in front of', 'in spite of','with regard to']
@@ -587,185 +585,6 @@ def multiWordAdverbs(token,sent):#much more work/validation needed here
 		sent[token.idx].lxgrtag = "rbphrsl"
 		sent[token.idx].deprel = "goeswith"
 
-def multiWordLinkingAdverbs(token,sent):
-	#Lists from Longman Grammar (pp. 558-559, pp. 875-879)
-	multiWordLinkingAdverbsPrepTwo = ["for another", "in addition", "in sum", "by comparison", "in conclusion", "for example", "for instance", "in contrast"]
-	multiWordLinkingAdverbsPrepThree = ["for one thing", "for another thing","in other words","on the contrary", "in any case", "at any rate", "by the way"]
-	multiWordLinkingAdverbsPrepThreeLast = ["in spite of"]
-	multiWordLinkingAdverbsPrepFour = ["in the first place", "in the second place", "by the same token", "on the other hand"]
-	multiWordLinkingAdverbsAdvmodTwo = ["after all"]
-	multiWordLinkingAdverbsAdvmodThree = ["first of all"]
-	multiWordLinkingAdverbsNpadvmod = ["all in all"]
-	multiWordLinkingAdverbsAdvclTwo = ["to summarize","to conclude"]
-	multiWordLinkingAdverbsAdvclThree = ["to begin with"]
-	multiWordLinkingAdverbXcomp = ["which is to say"]
-
-	if token.deprel in ["xcomp"] and nGramMiddle(sent[token.idx],sent,3,0) in multiWordLinkingAdverbXcomp:
-			sent[token.idx - 3].xpos = "RB"
-			sent[token.idx - 3].lxgrtag = "rb"
-			sent[token.idx - 3].cat1 = "link"
-			sent[token.idx- 3].deprel = "advmod"
-			sent[token.idx- 3].headidx = sent[token.idx - 2].headidx #the dependency structure ends up being a bit weird on this one.
-
-			sent[token.idx - 2].xpos = "GW"
-			sent[token.idx - 2].lxgrtag = "lnkphrsl"
-			sent[token.idx - 2].deprel = "goeswith"
-			sent[token.idx - 2].headidx = token.idx-3
-
-			sent[token.idx - 1].xpos = "GW"
-			sent[token.idx - 1].lxgrtag = "lnkphrsl"
-			sent[token.idx - 1].deprel = "goeswith"
-			sent[token.idx - 1].headidx = token.idx-3
-
-			sent[token.idx].xpos = "GW"
-			sent[token.idx].lxgrtag = "lnkphrsl"
-			sent[token.idx].deprel = "goeswith"
-			sent[token.idx].headidx = token.idx-3
-
-
-	if token.deprel in ["npadvmod"] and nGramMiddle(sent[token.idx],sent,1,1) in multiWordLinkingAdverbsNpadvmod:
-			sent[token.idx -1].xpos = "RB"
-			sent[token.idx -1].lxgrtag = "rb"
-			sent[token.idx -1].cat1 = "link"
-			sent[token.idx-1].deprel = "advmod"
-			sent[token.idx-1].headidx = token.headidx
-
-			sent[token.idx].xpos = "GW"
-			sent[token.idx].lxgrtag = "lnkphrsl"
-			sent[token.idx].deprel = "goeswith"
-			sent[token.idx].headidx = token.idx-1
-
-			sent[token.idx + 1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx-1
-
-
-	if token.deprel in ["advmod"]:
-		if nGramMiddle(sent[token.idx],sent,0,2) in multiWordLinkingAdverbsAdvmodThree:
-			sent[token.idx].xpos = "RB"
-			sent[token.idx].lxgrtag = "rb"
-			sent[token.idx].cat1 = "link"
-			sent[token.idx].deprel = "advmod"
-
-			sent[token.idx + 1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx
-
-			sent[token.idx + 2].xpos = "GW"
-			sent[token.idx + 2].lxgrtag = "lnkphrsl"
-			sent[token.idx + 2].deprel = "goeswith"
-			sent[token.idx + 2].headidx = token.idx
-
-		elif nGramMiddle(sent[token.idx],sent,0,1) in multiWordLinkingAdverbsAdvmodTwo:
-			sent[token.idx].xpos = "RB"
-			sent[token.idx].lxgrtag = "rb"
-			sent[token.idx].cat1 = "link"
-			sent[token.idx].deprel = "advmod"
-			sent[token.idx].headidx = sent[token.idx + 1].headidx
-
-			sent[token.idx + 1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx
-
-	if token.deprel in ["advcl"]:
-		if nGramMiddle(sent[token.idx],sent,1,1) in multiWordLinkingAdverbsAdvclThree:
-			sent[token.idx -1].xpos = "RB"
-			sent[token.idx -1].lxgrtag = "rb"
-			sent[token.idx -1].cat1 = "link"
-			sent[token.idx-1].deprel = "advmod"
-			sent[token.idx-1].headidx = token.headidx
-
-			sent[token.idx].xpos = "GW"
-			sent[token.idx].lxgrtag = "lnkphrsl"
-			sent[token.idx].deprel = "goeswith"
-			sent[token.idx].headidx = token.idx-1
-
-			sent[token.idx + 1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx-1
-		
-		elif nGramMiddle(sent[token.idx],sent,1,0) in multiWordLinkingAdverbsAdvclTwo:
-			sent[token.idx -1].xpos = "RB"
-			sent[token.idx -1].lxgrtag = "rb"
-			sent[token.idx -1].cat1 = "link"
-			sent[token.idx-1].deprel = "advmod"
-			sent[token.idx-1].headidx = token.headidx
-
-			sent[token.idx].xpos = "GW"
-			sent[token.idx].lxgrtag = "lnkphrsl"
-			sent[token.idx].deprel = "goeswith"
-			sent[token.idx].headidx = token.idx-1
-
-	if token.xpos in ["IN"] and sent[token.headidx].xpos[:2] in ["VB"]:
-		if nGramMiddle(sent[token.idx],sent,0,3) in multiWordLinkingAdverbsPrepFour:
-			sent[token.idx].xpos = "RB"
-			sent[token.idx].lxgrtag = "rb"
-			sent[token.idx].cat1 = "link"
-			sent[token.idx].deprel = "advmod"
-
-			sent[token.idx + 1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx
-
-			sent[token.idx + 2].xpos = "GW"
-			sent[token.idx + 2].lxgrtag = "lnkphrsl"
-			sent[token.idx + 2].deprel = "goeswith"
-			sent[token.idx + 2].headidx = token.idx
-
-			sent[token.idx + 3].xpos = "GW"
-			sent[token.idx + 3].lxgrtag = "lnkphrsl"
-			sent[token.idx + 3].deprel = "goeswith"
-			sent[token.idx + 3].headidx = token.idx
-
-		if nGramMiddle(sent[token.idx],sent,0,2) in multiWordLinkingAdverbsPrepThree:
-			sent[token.idx].xpos = "RB"
-			sent[token.idx].lxgrtag = "rb"
-			sent[token.idx].cat1 = "link"
-			sent[token.idx].deprel = "advmod"
-
-			sent[token.idx + 1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx
-
-			sent[token.idx + 2].xpos = "GW"
-			sent[token.idx + 2].lxgrtag = "lnkphrsl"
-			sent[token.idx + 2].deprel = "goeswith"
-			sent[token.idx + 2].headidx = token.idx
-
-		if nGramMiddle(sent[token.idx],sent,2,0) in multiWordLinkingAdverbsPrepThreeLast:
-			sent[token.idx -2].xpos = "RB"
-			sent[token.idx -2].lxgrtag = "rb"
-			sent[token.idx -2].cat1 = "link"
-			sent[token.idx-2].deprel = "advmod"
-			sent[token.idx-2].headidx = token.headidx
-
-			sent[token.idx - 1].xpos = "GW"
-			sent[token.idx - 1].lxgrtag = "lnkphrsl"
-			sent[token.idx - 1].deprel = "goeswith"
-			sent[token.idx - 1].headidx = token.idx-2
-
-			sent[token.idx].xpos = "GW"
-			sent[token.idx].lxgrtag = "lnkphrsl"
-			sent[token.idx].deprel = "goeswith"
-			sent[token.idx].headidx = token.idx-2
-
-		if nGramMiddle(sent[token.idx],sent,0,1) in multiWordLinkingAdverbsPrepTwo:
-			sent[token.idx].xpos = "RB"
-			sent[token.idx].lxgrtag = "rb"
-			sent[token.idx].cat1 = "link"
-			sent[token.idx].deprel = "advmod"
-
-			sent[token.idx +1].xpos = "GW"
-			sent[token.idx + 1].lxgrtag = "lnkphrsl"
-			sent[token.idx + 1].deprel = "goeswith"
-			sent[token.idx + 1].headidx = token.idx
-
 
 
 
@@ -820,18 +639,14 @@ def adjectives(token):	#2022-11-22
 def adverbs(token,sent): #2022-11-22; tagged on adverb
 	#this list needs to be more robust - taken from Table 10.17, page 879 LGSWE
 	#will need to deal with prepositional linking adverbials elsewhere
-	#linking = ["so","then","though","anyway","however","thus","therefore","e.g.","i.e.","first","finally","furthermore","hence","nevertheless","rather","yet"] 
-	linking  = ["secondly", "thirdly", "lastly", "altogether", "overall", "namely", "ie", "therefore", "thus", "however", "alternatively", "incidentally", "next", "further", "likewise", "moreover", "i.e.", "e.g.", "consequently", "anyway", "conversely", "instead", "anyhow", "besides", "nevertheless"] #from Longman Grammar pp. 558-559, pp. 875-879; previous list also included "though","finally","furthermore","hence", "rather"
-	linkingIfFirst = ["now", "similarly","yet","still","also","so","then","first","second"]
+	linking = ["so","then","though","anyway","however","thus","therefore","e.g.","i.e.","first","finally","furthermore","hence","nevertheless","rather","yet"] 
 	if token.deprel == "advmod":
 		token.lxgrtag = "rb"
 		#print(token.word)
 		if token.word[-2:].lower() == "ly":
 			token.cat2 = "ly"
 		if token.deprel == "advmod" and sent[token.headidx].xpos[:2] == "VB":
-			if token.word.lower() in linkingIfFirst and token.idx in [0]: #check words that are linking adverbs if they occur at the beginning of a sentence.
-				token.cat1 = "link"
-			elif token.word.lower() in linking:# updated list and code on 2025-02-21 previously: and token.idx < token.headidx: #if the word can be a linking adverb and occurs before the main verb:
+			if token.word.lower() in linking and token.idx < token.headidx: #if the word can be a linking adverb and occurs before the main verb:
 				token.cat1 = "link"
 			else:
 				token.cat1 = "advl"
@@ -851,12 +666,6 @@ def adverbs(token,sent): #2022-11-22; tagged on adverb
 		token.cat1 = "prtcle"
 	if token.lxgrtag == "rb" and token.cat1 == None:
 		token.cat1 = "othr"
-	if token.deprel in ["npadvmod"] and token.word.lower() in ["yesterday","tomorrow"]: #added on 2025-02-21;updated on 2025-03-07
-		token.lxgrtag = "rb"
-		token.deprel = "advmod"
-		token.xpos = "RB"
-		token.upos = "ADV"
-
 	#deal with multiword wh-subordinators
 	if token.word.lower() in ["well"] and len([x.word for x in sent if x.cat1 in ["comp_wh"] and x.headidx == token.idx]) > 0:
 		token.lxgrtag = None
@@ -1172,7 +981,6 @@ def advanced_pronoun(token,sent):	#updated 2022-11-02
 			token.cat2 = "sg"
 
 	#determining whether demonstrative pronouns are actually being used as demonstrative can be tricky using spacy:
-	#also, the use of the word "here" as a demonstrative pronoun may need to be addressed. They are tagged as adverbs by spacy.
 	elif token.word.lower() in demonstrative_list and token.deprel in ["nsubj","nsubjpass","dobj","pobj"]: 
 		if token.deprel == "advmod":
 			token.lxgrtag = "pro"
@@ -1525,13 +1333,9 @@ def tag(input,conllu = False): #tags :)
 			multiWordSubordinators(token,sent.tokens)
 			semiModalAdjust(token,sent.tokens)
 			multiWordAdverbs(token,sent.tokens)
-			multiWordLinkingAdverbs(token,sent.tokens)
-
 		
 		for token in sent.tokens:
 			if token.deprel in ["goeswith"]:
-				continue
-			if token.cat1 in ["link"]:
 				continue
 			else:
 				personal_pronouns(token)
@@ -1764,69 +1568,6 @@ def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234
 		f.write("\n".join(dev))
 	with open(writeLoc +"test.iob", "w") as f:
 		f.write("\n".join(test))
-
-# work on 2025-02-21
-### test selection of single-word linking adverbs
-# printer(tag("First, I ate pizza, then I drank beer."),verbose = True)
-# printer(tag("I want the first one."),verbose = True)
-# printer(tag("Now, I am not sure, but I think I would like to eat pizza."),verbose = True)
-# printer(tag("I would like to eat pizza now."),verbose = True)
-# printer(tag("Similarly, she loves pizza."),verbose = True)
-# printer(tag("I haven't been there yet. Yet, I would like to go."),verbose = True)
-# printer(tag("Still, I would like to go climbing. I still like climbing."),verbose = True)
-# printer(tag("I will buy the next round of beers."),verbose = True)
-# printer(tag("He went to work, however, and tried to concentrate."),verbose = True)
-# printer(tag("He went to work however he could."),verbose = True) #this construction is a bit weird, and "however" is tagged as part of an adverbial clause. But, it is not caught by lxgrtagger
-# printer(tag("I ate pizza so I could have power."),verbose = True) #"so" was tagged as subordinator (appropriately)
-### Single word items seem to be working correctly
-
-### Test two-word prep-based linking adverbials
-# printer(tag("In addition, I like pizza. For another, I like beer."),verbose = True)
-# printer(tag("By comparison, I like pizza. In conclusion, I like beer."),verbose = True)
-
-# ### Test three-word prep-based linking adverbials
-# printer(tag("For one thing, I like pizza. On the contrary, I like beer."),verbose = True)
-# printer(tag("At any rate, I like pizza. By the way, I like beer."),verbose = True)
-# printer(tag("In spite of that, they like pizza. They like pizza in spite of the risks."),verbose = True)
-
-### Test four-word prep-based linking adverbials
-# printer(tag("By the same token, I like pizza. In the first place, I like beer."),verbose = True)
-# printer(tag("On the other hand, I like pizza. In the second place, I like beer."),verbose = True)
-
-#test other cases
-# ["first of all"] #advmod
-# 0 First first None rb link None None None None None None None RB advmod 5
-# 1 of of None in in_othr None None None None None None None IN prep 0
-# 2 all all None None None None None None None None None None DT pobj 1
-# ["after all"] #advmod advmod
-# 0 After after rb+jjrbmod rb othr None None None None None None None RB advmod 1
-# 1 all all rb+advl rb advl None None None None None None None RB advmod 4
-# ["all in all"] #npadvmod
-# 0 All all None rb othr None None None None None None None DT advmod 1
-# 1 in in None None None None None None None None None None IN npadvmod 5
-# 2 all all None rb othr None None None None None None None DT advmod 1
-#["to summarize","to conclude"] #advcl
-# 0 To to None to None None None None None None None None TO aux 1
-# 1 summarize summarize tocls+advl vbmain vblex nonfinite simple active advlcls tocls None None VB advcl 4
-#["to begin with"] #advcl
-# 0 To to None to None None None None None None None None TO aux 1
-# 1 begin begin tocls+advl vbmain prepv nonfinite simple active advlcls tocls None None VB advcl 5
-# 2 with with None rb prtcle None None None None None None None IN prt 1
-# ["which is to say"] #xcomp
-# 0 Which which None None None None None None None None None None WDT nsubj 1
-# 1 is be None vbmain be pres simple active None None None None VBZ ROOT 1
-# 2 to to None to None None None None None None None None TO aux 3
-# 3 say say tocls+vcomp vbmain vblex nonfinite simple active compcls tocls vcomp None VB xcomp 1
-
-# printer(tag("First of all, I like pizza. After all, I like beer."),verbose = True)
-# printer(tag("I like beer after all."),verbose = True)
-
-# printer(tag("All in all, I like pizza. To summarize, I like beer."),verbose = True)
-# printer(tag("To begin with, I like pizza. Which is to say, I like beer."),verbose = True)
-# printer(tag("I like beer, which is to say, I am human."),verbose = True)
-
-
-
 
 # work on 2025-02-09
 #nn+npremod
