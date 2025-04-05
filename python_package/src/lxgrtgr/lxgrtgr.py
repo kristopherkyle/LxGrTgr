@@ -1623,6 +1623,8 @@ def countTagsFile(fname,tagList = None):
 	sents = open(fname, encoding = "utf-8", errors = "ignore").read().strip().split("\n\n")
 	for sent in sents:
 		for token in sent.split("\n"):
+			if len(token) < 1:
+				continue
 			if token[0] == "#":
 				continue
 			elif len(token.split("\t")) < 15:
