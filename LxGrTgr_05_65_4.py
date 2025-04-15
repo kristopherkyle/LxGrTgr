@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.65.1"
-version_notes = "0.0.5.65.1 - Minor bug fix"
+version = "0.0.5.65.4"
+version_notes = "0.0.5.65.4 - Deal with filename handling across windows/mac"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -39,7 +39,8 @@ import os #for making folders
 from random import sample #for random samples
 import re #for regulat expressions
 from importlib_resources import files #for opening package files - need to include in package dependencies
-
+import math
+from pathlib import Path #windows + mac compatibility
 ### spacy
 print("Importing Spacy")
 import spacy #base NLP
@@ -80,7 +81,7 @@ prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip()
 # os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
 # nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
 # prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
-#phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
+# phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
 ##########################################
 
 ### Utility Functions ####################
@@ -104,8 +105,12 @@ def safe_divide(numerator,denominator):
 class tokenInfo():
 	def __init__(self, spacyToken): 
 		self.idx = None #will have to add this from position in sentence
-		self.word = spacyToken.text #raw text
-		self.lemma = spacyToken.lemma_.lower() #lowered lemma form
+		if spacyToken.tag in ["_SP"]:
+			self.word = " " #normalize weird spacing issues
+			self.lemma = " " #normalize weird spacing issues
+		else:
+			self.word = spacyToken.text #raw text
+			self.lemma = spacyToken.lemma_.lower() #lowered lemma form
 		self.upos = spacyToken.pos_ #Universal part of speech
 		self.xpos = spacyToken.tag_ #penn tag
 		self.deprel = spacyToken.dep_ #dependency relation (based on CLEAR tagset)
@@ -1483,33 +1488,65 @@ def cxLastPass(token,sent):
 # structTest = nlp("This is a sample text.")
 # for token in structTest:
 # 	print(token.head)
+def longTextcheck(text):
+	segments = []
+	if len(text) > 500000:
+		nsegs = math.ceil(len(text)/500000) #get whole number
+		text_segL = math.ceil(len(text)/nsegs)
+		start = 0
+		end = text_segL
+		print("This text is particuarly long. Segmenting into",nsegs, "segments of approximately", text_segL, "characters each for efficient processing.")
+		for seg in range(nsegs):
+			if seg == nsegs-1:
+				segments.append(text[start:])
+			else:
+				segments.append(text[start:end])
+				start = end
+				end = start + text_segL
+	else:
+		segments = [text]
+	return(segments)
+
+
+
+
 def preprocess(text,conllu = False): #takes raw text, processes with spacy, then outputs a list of sentences filled with tokenObjects
 	sentCounter = 0
 	output = []
 	if conllu == True:
-		doc = processConllu(text)
+		docs = [processConllu(text)]
 	else:
-		doc = nlp(text)
-	for sent in doc.sents:
-		sentObj = sentBlank() #blank sentence object
-		sentObj.meta.append("#sentid = " + str(sentCounter))
-		#sentl = []
-		sidx = 0 #within sentence idx
-		firstWord = True #check for first word
-		for token in sent:
-			#print(token.idx)
-			if firstWord == True: #check for first word in sentence
-				sstartidx = token.i #set to document position of first token in sentence
-				firstWord = False
-			#print(sstartidx)
-			tok = tokenInfo(token)
-			tok.idx = sidx
-			tok.headidx = tok.headidx - sstartidx #adjust heads from document position to sentence position
-			sidx += 1
-			sentObj.tokens.append(tok)
-			#sentl.append(tok)
-		output.append(sentObj)
-		sentCounter += 1
+		if len(text) > 500000:
+			texts = longTextcheck(text)
+			docs = []
+			for idx,x in enumerate(texts):
+				print("Processing segment",idx+1, "of",len(texts))
+				doc = nlp(x)
+				docs.append(doc)
+			#docs = [nlp(x) for x in texts]
+		else:
+			docs = [nlp(text)]
+	for doc in docs:
+		for sent in doc.sents:
+			sentObj = sentBlank() #blank sentence object
+			sentObj.meta.append("#sentid = " + str(sentCounter))
+			#sentl = []
+			sidx = 0 #within sentence idx
+			firstWord = True #check for first word
+			for token in sent:
+				#print(token.idx)
+				if firstWord == True: #check for first word in sentence
+					sstartidx = token.i #set to document position of first token in sentence
+					firstWord = False
+				#print(sstartidx)
+				tok = tokenInfo(token)
+				tok.idx = sidx
+				tok.headidx = tok.headidx - sstartidx #adjust heads from document position to sentence position
+				sidx += 1
+				sentObj.tokens.append(tok)
+				#sentl.append(tok)
+			output.append(sentObj)
+			sentCounter += 1
 	return(output)
 
 def tag(input,conllu = False): #tags :)
@@ -1571,7 +1608,7 @@ def printer(loToks, verbose = False):
 			print("\n")
 
 def writer(outname,loToks,joiner = "\t"):
-	outf = open(outname,"w")
+	outf = open(Path(outname),"w")
 	docout = []
 	for sent in loToks:
 		sentout = []
@@ -1600,17 +1637,21 @@ def writer(outname,loToks,joiner = "\t"):
 
 #consider allowing for targetDir to be a list or a directory name
 def tagFolder(targetDir,outputDir,suff = ".txt"): #need to add this to lxgrtgr
-	if targetDir[-1] != "/":
-		targetDir = targetDir + "/"
-	if outputDir[-1] != "/":
-		outputDir = outputDir + "/"
+	targetDir = Path(targetDir)
+	outputDir = Path(outputDir)
+	# if targetDir[-1] not in ["/"]:
+	# 	targetDir = Path(targetDir + "/")
+	# if outputDir[-1] != "/":
+	# 	outputDir = Path(outputDir + "/")
 	print("Tagging all",suff, "files in",targetDir)
-	fnames = glob.glob(targetDir + "*" + ".txt")
+	fnames = list(targetDir.glob("*" + suff))
+	#fnames = glob.glob(targetDir / "*" + suff)
 	for fname in fnames:
-		simpleName = fname.split("/")[-1]
+		simpleName = Path(fname).name
+		#simpleName = fname.split("/")[-1]
 		print("Processing", simpleName)
-		tagged_sents = tag(open(fname,encoding = "utf-8", errors = "ignore").read().strip())
-		writer(outputDir + simpleName.replace(suff,"_tagged"+suff),tagged_sents)
+		tagged_sents = tag(open(Path(fname),encoding = "utf-8", errors = "ignore").read().strip())
+		writer(outputDir / simpleName.replace(suff,"_tagged"+suff),tagged_sents)
 	print("Your files have been tagged. It is time to check the output!")
 
 def countTagsFile(fname,tagList = None): 
@@ -1620,7 +1661,7 @@ def countTagsFile(fname,tagList = None):
 	ignored = []
 	for tag in tagList:
 		outd[tag] = 0
-	sents = open(fname, encoding = "utf-8", errors = "ignore").read().strip().split("\n\n")
+	sents = open(Path(fname), encoding = "utf-8", errors = "ignore").read().strip().split("\n\n")
 	for sent in sents:
 		for token in sent.split("\n"):
 			if len(token) < 1:
@@ -1645,11 +1686,14 @@ def countTagsFile(fname,tagList = None):
 #consider making this either a list or a directory
 def countTagsFolder(targetDir,tagList = None,suff = ".txt"): #need to add this to lxgrtgr
 	folderD = {}
-	if targetDir[-1] != "/":
-		targetDir = targetDir + "/"
-	fnames = glob.glob(targetDir + "*" + suff) #get all filenames
+	targetDir = Path(targetDir)
+	# if targetDir[-1] != "/":
+	# 	targetDir = Path(targetDir + "/")
+	fnames = list(targetDir.glob("*" + suff))
+	#fnames = glob.glob(targetDir + "*" + suff) #get all filenames
 	for fname in fnames:
-		simpleName = fname.split("/")[-1]
+		simpleName = Path(fname).name
+		#simpleName = fname.split("/")[-1]
 		print("Processing", simpleName)
 		folderD[simpleName] = countTagsFile(fname,tagList)
 	return(folderD)
@@ -1670,7 +1714,7 @@ def writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,normi
 				else:
 					row.append(str(outputD[fname][tag]))
 		outL.append(sep.join(row))
-	outf = open(outName,"w")
+	outf = open(Path(outName),"w")
 	outf.write("\n".join(outL))
 	outf.flush()
 	outf.close()
@@ -1678,7 +1722,7 @@ def writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,normi
 
 def readConll(fname):
 	outl = [] #list of sentObjs
-	sents = open(fname,errors = "ignore").read().strip().split("\n\n")
+	sents = open(Path(fname),errors = "ignore").read().strip().split("\n\n")
 	for sent in sents:
 		skipSent = False
 		sentObj = sentBlank() #create sentence object instance
@@ -1713,8 +1757,9 @@ def readConll(fname):
 def tagConlluFolder(loFnames):
 	folderOutput = []
 	for fname in loFnames:
-		print(fname.split("/")[-1])
-		fileOutput = tag(open(fname).read().strip(),conllu = True)
+		print(Path(fname).name)
+		#print(fname.split("/")[-1])
+		fileOutput = tag(open(Path(fname)).read().strip(),conllu = True)
 		#printer(fileOutput,verbose = True)
 		folderOutput = folderOutput + fileOutput
 	return(folderOutput)
@@ -1760,11 +1805,11 @@ def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234
 	print("dev:",len(dev),"sents")
 	print("test:",len(test),"sents")
 
-	with open(writeLoc +"train.iob", "w") as f:
+	with open(Path(writeLoc / "train.iob"), "w") as f:
 		f.write("\n".join(train))
-	with open(writeLoc +"dev.iob", "w") as f:
+	with open(Path(writeLoc / "dev.iob"), "w") as f:
 		f.write("\n".join(dev))
-	with open(writeLoc +"test.iob", "w") as f:
+	with open(Path(writeLoc / "test.iob"), "w") as f:
 		f.write("\n".join(test))
 
 # work on 2025-02-21

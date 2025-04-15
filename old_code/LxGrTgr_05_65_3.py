@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.65.4"
-version_notes = "0.0.5.65.4 - Deal with filename handling across windows/mac"
+version = "0.0.5.65.3"
+version_notes = "0.0.5.65.3 - Allow for longer texts"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -40,7 +40,6 @@ from random import sample #for random samples
 import re #for regulat expressions
 from importlib_resources import files #for opening package files - need to include in package dependencies
 import math
-from pathlib import Path #windows + mac compatibility
 ### spacy
 print("Importing Spacy")
 import spacy #base NLP
@@ -74,14 +73,14 @@ class WhitespaceTokenizer(object):
 # prepVerbList = files('lists_LGR').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # for Python package:
-nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
-prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
+# nominal_stop = files('lxgrtgr').joinpath('nom_stop_list_edited.txt').read_text().strip().split("\n")
+# prepVerbList = files('lxgrtgr').joinpath('prepVerbList.txt').read_text().strip().split("\n")
 
 # for web access and pc access:
-# os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
-# nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
-# prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
-# phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
+os.chdir('/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/')
+nominal_stop = open("lists_LGR/nom_stop_list_edited.txt").read().split("\n") # created based on frequently occuring nouns with [potential] nominalizer suffixes in TMLE + T2KSWAL
+prepVerbList = open("lists_LGR/prepVerbList.txt").read().split("\n") # From LGSWE; currently ignored in favor of OntoNotes classifications
+phrasalVerbList = open("lists_LGR/phrasalVerbList.txt").read().split("\n") # From LGSWE
 ##########################################
 
 ### Utility Functions ####################
@@ -105,7 +104,7 @@ def safe_divide(numerator,denominator):
 class tokenInfo():
 	def __init__(self, spacyToken): 
 		self.idx = None #will have to add this from position in sentence
-		if spacyToken.tag in ["_SP"]:
+		if spacyToken.tag in ["SP_"]:
 			self.word = " " #normalize weird spacing issues
 			self.lemma = " " #normalize weird spacing issues
 		else:
@@ -1608,7 +1607,7 @@ def printer(loToks, verbose = False):
 			print("\n")
 
 def writer(outname,loToks,joiner = "\t"):
-	outf = open(Path(outname),"w")
+	outf = open(outname,"w")
 	docout = []
 	for sent in loToks:
 		sentout = []
@@ -1637,21 +1636,17 @@ def writer(outname,loToks,joiner = "\t"):
 
 #consider allowing for targetDir to be a list or a directory name
 def tagFolder(targetDir,outputDir,suff = ".txt"): #need to add this to lxgrtgr
-	targetDir = Path(targetDir)
-	outputDir = Path(outputDir)
-	# if targetDir[-1] not in ["/"]:
-	# 	targetDir = Path(targetDir + "/")
-	# if outputDir[-1] != "/":
-	# 	outputDir = Path(outputDir + "/")
+	if targetDir[-1] != "/":
+		targetDir = targetDir + "/"
+	if outputDir[-1] != "/":
+		outputDir = outputDir + "/"
 	print("Tagging all",suff, "files in",targetDir)
-	fnames = list(targetDir.glob("*" + suff))
-	#fnames = glob.glob(targetDir / "*" + suff)
+	fnames = glob.glob(targetDir + "*" + ".txt")
 	for fname in fnames:
-		simpleName = Path(fname).name
-		#simpleName = fname.split("/")[-1]
+		simpleName = fname.split("/")[-1]
 		print("Processing", simpleName)
-		tagged_sents = tag(open(Path(fname),encoding = "utf-8", errors = "ignore").read().strip())
-		writer(outputDir / simpleName.replace(suff,"_tagged"+suff),tagged_sents)
+		tagged_sents = tag(open(fname,encoding = "utf-8", errors = "ignore").read().strip())
+		writer(outputDir + simpleName.replace(suff,"_tagged"+suff),tagged_sents)
 	print("Your files have been tagged. It is time to check the output!")
 
 def countTagsFile(fname,tagList = None): 
@@ -1661,7 +1656,7 @@ def countTagsFile(fname,tagList = None):
 	ignored = []
 	for tag in tagList:
 		outd[tag] = 0
-	sents = open(Path(fname), encoding = "utf-8", errors = "ignore").read().strip().split("\n\n")
+	sents = open(fname, encoding = "utf-8", errors = "ignore").read().strip().split("\n\n")
 	for sent in sents:
 		for token in sent.split("\n"):
 			if len(token) < 1:
@@ -1686,14 +1681,11 @@ def countTagsFile(fname,tagList = None):
 #consider making this either a list or a directory
 def countTagsFolder(targetDir,tagList = None,suff = ".txt"): #need to add this to lxgrtgr
 	folderD = {}
-	targetDir = Path(targetDir)
-	# if targetDir[-1] != "/":
-	# 	targetDir = Path(targetDir + "/")
-	fnames = list(targetDir.glob("*" + suff))
-	#fnames = glob.glob(targetDir + "*" + suff) #get all filenames
+	if targetDir[-1] != "/":
+		targetDir = targetDir + "/"
+	fnames = glob.glob(targetDir + "*" + suff) #get all filenames
 	for fname in fnames:
-		simpleName = Path(fname).name
-		#simpleName = fname.split("/")[-1]
+		simpleName = fname.split("/")[-1]
 		print("Processing", simpleName)
 		folderD[simpleName] = countTagsFile(fname,tagList)
 	return(folderD)
@@ -1714,7 +1706,7 @@ def writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,normi
 				else:
 					row.append(str(outputD[fname][tag]))
 		outL.append(sep.join(row))
-	outf = open(Path(outName),"w")
+	outf = open(outName,"w")
 	outf.write("\n".join(outL))
 	outf.flush()
 	outf.close()
@@ -1722,7 +1714,7 @@ def writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,normi
 
 def readConll(fname):
 	outl = [] #list of sentObjs
-	sents = open(Path(fname),errors = "ignore").read().strip().split("\n\n")
+	sents = open(fname,errors = "ignore").read().strip().split("\n\n")
 	for sent in sents:
 		skipSent = False
 		sentObj = sentBlank() #create sentence object instance
@@ -1757,9 +1749,8 @@ def readConll(fname):
 def tagConlluFolder(loFnames):
 	folderOutput = []
 	for fname in loFnames:
-		print(Path(fname).name)
-		#print(fname.split("/")[-1])
-		fileOutput = tag(open(Path(fname)).read().strip(),conllu = True)
+		print(fname.split("/")[-1])
+		fileOutput = tag(open(fname).read().strip(),conllu = True)
 		#printer(fileOutput,verbose = True)
 		folderOutput = folderOutput + fileOutput
 	return(folderOutput)
@@ -1805,11 +1796,11 @@ def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234
 	print("dev:",len(dev),"sents")
 	print("test:",len(test),"sents")
 
-	with open(Path(writeLoc / "train.iob"), "w") as f:
+	with open(writeLoc +"train.iob", "w") as f:
 		f.write("\n".join(train))
-	with open(Path(writeLoc / "dev.iob"), "w") as f:
+	with open(writeLoc +"dev.iob", "w") as f:
 		f.write("\n".join(dev))
-	with open(Path(writeLoc / "test.iob"), "w") as f:
+	with open(writeLoc +"test.iob", "w") as f:
 		f.write("\n".join(test))
 
 # work on 2025-02-21
