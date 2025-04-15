@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.65.4"
-version_notes = "0.0.5.65.4 - Deal with filename handling across windows/mac"
+version = "0.0.5.65.5"
+version_notes = "0.0.5.65.5 - Deal with filename handling across windows/mac"
 
 # 0.0.5.9 - update jj+that+jcomp definition, check verb_+_wh [seems OK], update "xtrapos+jj+that+compcls"
 # 0.0.5.10 - update Make adverbial clauses ("finite_advl_cls")more general - narrow later
@@ -105,7 +105,7 @@ def safe_divide(numerator,denominator):
 class tokenInfo():
 	def __init__(self, spacyToken): 
 		self.idx = None #will have to add this from position in sentence
-		if spacyToken.tag in ["_SP"]:
+		if spacyToken.tag_ in ["_SP"]:
 			self.word = " " #normalize weird spacing issues
 			self.lemma = " " #normalize weird spacing issues
 		else:
