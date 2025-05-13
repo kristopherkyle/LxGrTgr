@@ -1,6 +1,6 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: lxgrtgr
-Version: 0.5.65.5
+Version: 0.5.67
 Summary: Lexicogrammatical tagging and tag counting tool
 Home-page: https://github.com/kristopherkyle/LxGrTgr
 Author: Kristopher Kyle
@@ -8,15 +8,6 @@ Author-email: kristopherkyle1@gmail.com
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
 Description-Content-Type: text/markdown
-Requires-Dist: importlib_resources
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: home-page
-Dynamic: requires-dist
-Dynamic: summary
 
 # Lexicogrammatical Tagger (LxGrTgr)
 Note that LxGrTgr is currently being beta tested and should not be used in research. Once the beta testing concludes, this message will change.

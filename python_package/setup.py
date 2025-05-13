@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="lxgrtgr",
-    version="0.5.65.5",
+    version="0.5.67",
     author="Kristopher Kyle",
     author_email="kristopherkyle1@gmail.com",
     description="Lexicogrammatical tagging and tag counting tool",
@@ -20,5 +20,4 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    install_requires=['importlib_resources'],
 )

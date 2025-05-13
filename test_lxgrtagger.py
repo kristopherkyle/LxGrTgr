@@ -20,7 +20,9 @@ lxgr.writer("sample_results/sample2.tsv",sample2)
 import os
 os.chdir("/Users/kristopherkyle/Desktop/Programming/GitHub/LCR-ADS-Lab/LxGrTgr/")
 
-import LxGrTgr_05_65_4 as lxgr
+#import LxGrTgr_05_65_5 as lxgr
+import lxgrtgr as lxgr
+lxgr.version
 tagList = ["finitecls+advl","thatcls+vcomp","whcls+vcomp","finitecls+rel","thatcls+ncomp","thatcls+jcomp","xtrapos+thatcls+jcomp","whcls+incomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
 lxgr.tagFolder("/Users/kristopherkyle/Desktop/books for LxGrTgr",'/Users/kristopherkyle/Desktop/lxgrOutput')
 countD = lxgr.countTagsFolder('/Users/kristopherkyle/Desktop/lxgrOutput/',tagList)

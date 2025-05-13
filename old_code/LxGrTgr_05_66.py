@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.67"
-version_notes = "0.0.5.67 - remove unnessary file calls; bug fix nlp call"
+version = "0.0.5.66"
+version_notes = "0.0.5.66 - Update nlp call; remove unnessary file calls"
 
 import glob #for finding all filenames in a folder
 import os #for making folders
@@ -37,17 +37,21 @@ import re #for regulat expressions
 import math
 from pathlib import Path #windows + mac compatibility
 ### spacy
-print("Importing Spacy")
-import spacy #base NLP
-print("Spacy Successfully Loaded")
-from spacy.tokens import Doc
-from spacy.language import Language
+try:
+	print("Importing Spacy")
+	import spacy #base NLP
+	print("Spacy Successfully Loaded")
+	from spacy.tokens import Doc
+	from spacy.language import Language
+except ModuleNotFoundError:
+	spacy = None
+	print("Spacy couldn't be loaded. Please check your installation of Spacy and try again.")
 #nlp = spacy.load("en_core_web_sm") #load model
-print("Loading Transformer Model")
-nlp = spacy.load("en_core_web_trf")  #load model
-# nlp = None
-print("Transformer Model Successfully Loaded")
-nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
+#print("Loading Transformer Model")
+#nlp = spacy.load("en_core_web_trf")  #load model
+nlp = None
+#print("Transformer Model Successfully Loaded")
+# nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
 
@@ -1491,43 +1495,48 @@ def longTextcheck(text):
 
 
 def preprocess(text,conllu = False): #takes raw text, processes with spacy, then outputs a list of sentences filled with tokenObjects
-	sentCounter = 0
-	output = []
-	if conllu == True:
-		docs = [processConllu(text)]
+	if nlp == None:
+		print("Error: No Spacy Model Loaded")
+		return(None)
 	else:
-		if len(text) > 500000:
-			texts = longTextcheck(text)
-			docs = []
-			for idx,x in enumerate(texts):
-				print("Processing segment",idx+1, "of",len(texts))
-				doc = nlp(x)
-				docs.append(doc)
-			#docs = [nlp(x) for x in texts]
+		nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
+		sentCounter = 0
+		output = []
+		if conllu == True:
+			docs = [processConllu(text)]
 		else:
-			docs = [nlp(text)]
-	for doc in docs:
-		for sent in doc.sents:
-			sentObj = sentBlank() #blank sentence object
-			sentObj.meta.append("#sentid = " + str(sentCounter))
-			#sentl = []
-			sidx = 0 #within sentence idx
-			firstWord = True #check for first word
-			for token in sent:
-				#print(token.idx)
-				if firstWord == True: #check for first word in sentence
-					sstartidx = token.i #set to document position of first token in sentence
-					firstWord = False
-				#print(sstartidx)
-				tok = tokenInfo(token)
-				tok.idx = sidx
-				tok.headidx = tok.headidx - sstartidx #adjust heads from document position to sentence position
-				sidx += 1
-				sentObj.tokens.append(tok)
-				#sentl.append(tok)
-			output.append(sentObj)
-			sentCounter += 1
-	return(output)
+			if len(text) > 500000:
+				texts = longTextcheck(text)
+				docs = []
+				for idx,x in enumerate(texts):
+					print("Processing segment",idx+1, "of",len(texts))
+					doc = nlp(x)
+					docs.append(doc)
+				#docs = [nlp(x) for x in texts]
+			else:
+				docs = [nlp(text)]
+		for doc in docs:
+			for sent in doc.sents:
+				sentObj = sentBlank() #blank sentence object
+				sentObj.meta.append("#sentid = " + str(sentCounter))
+				#sentl = []
+				sidx = 0 #within sentence idx
+				firstWord = True #check for first word
+				for token in sent:
+					#print(token.idx)
+					if firstWord == True: #check for first word in sentence
+						sstartidx = token.i #set to document position of first token in sentence
+						firstWord = False
+					#print(sstartidx)
+					tok = tokenInfo(token)
+					tok.idx = sidx
+					tok.headidx = tok.headidx - sstartidx #adjust heads from document position to sentence position
+					sidx += 1
+					sentObj.tokens.append(tok)
+					#sentl.append(tok)
+				output.append(sentObj)
+				sentCounter += 1
+		return(output)
 
 def tag(input,conllu = False): #tags :)
 	sents = []
