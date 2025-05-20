@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.72"
-version_notes = "0.0.5.72 - bug fixes"
+version = "0.0.5.70"
+version_notes = "0.0.5.70 - reduce unnecessary overhead/bug fixes"
 
 import glob #for finding all filenames in a folder
 import os #for making folders
@@ -39,9 +39,9 @@ from pathlib import Path #windows + mac compatibility
 from tagCounter import *
 ### spacy
 print("Importing Spacy")
-import spacy_transformers
-import spacy_alignments
-import spacy_transformers.pipeline_component
+# import spacy_transformers
+# import spacy_alignments
+# import spacy_transformers.pipeline_component
 import spacy #base NLP
 print("Spacy Successfully Loaded")
 from spacy.tokens import Doc
@@ -1618,24 +1618,6 @@ def writer(outname,loToks,joiner = "\t"):
 	outf.write("\n\n".join(docout))
 	outf.flush()
 	outf.close()
-
-def tagFolder(targetDir,outputDir,suff = ".txt"): #need to add this to lxgrtgr
-	targetDir = Path(targetDir)
-	outputDir = Path(outputDir)
-	# if targetDir[-1] not in ["/"]:
-	# 	targetDir = Path(targetDir + "/")
-	# if outputDir[-1] != "/":
-	# 	outputDir = Path(outputDir + "/")
-	print("Tagging all",suff, "files in",targetDir)
-	fnames = list(targetDir.glob("*" + suff))
-	#fnames = glob.glob(targetDir / "*" + suff)
-	for fname in fnames:
-		simpleName = Path(fname).name
-		#simpleName = fname.split("/")[-1]
-		print("Processing", simpleName)
-		tagged_sents = tag(open(Path(fname),encoding = "utf-8", errors = "ignore").read().strip())
-		writer(outputDir / simpleName.replace(suff,"_tagged"+suff),tagged_sents)
-	print("Your files have been tagged. It is time to check the output!")
 
 
 def readConll(fname):

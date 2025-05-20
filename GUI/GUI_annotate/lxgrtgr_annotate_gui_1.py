@@ -50,7 +50,7 @@ def resource_path(relative):
 #color = "#489D46"
 color = "#A2AAAD"
 
-prog_name = "LxGrTagger v0.68"
+prog_name = "LxGrTagger v0.72"
 
 if platform.system() == "Darwin":
 	system = "M"
