@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: tagCounter
+Version: 0.1
+Summary: Tag counting tool for LxGrTagger
+Home-page: https://github.com/kristopherkyle/tagCounter
+Author: Kristopher Kyle
+Author-email: kristopherkyle1@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: summary
+
+# TagCounter

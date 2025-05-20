@@ -1,1 +1,5 @@
-GUI/dist/*
+GUI/GUI_annotate/dist/*
+GUI/GUI_annotate/build/*
+GUI/GUI_annotate/en_core_web_trf/*
+GUI/GUI_annotate/en_core_web_trf-3.5.0/*
+GUI/GUI_annotate/en_core_web_trf-3.5.0.dist-info/*

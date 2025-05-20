@@ -1,0 +1,12 @@
+README.md
+setup.py
+src/LxgrCounter.egg-info/PKG-INFO
+src/LxgrCounter.egg-info/SOURCES.txt
+src/LxgrCounter.egg-info/dependency_links.txt
+src/LxgrCounter.egg-info/top_level.txt
+src/lxgrCounter.egg-info/PKG-INFO
+src/lxgrCounter.egg-info/SOURCES.txt
+src/lxgrCounter.egg-info/dependency_links.txt
+src/lxgrCounter.egg-info/top_level.txt
+src/tagCounter/__init__.py
+src/tagCounter/tagCounter.py

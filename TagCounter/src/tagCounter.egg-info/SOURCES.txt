@@ -1,0 +1,8 @@
+README.md
+setup.py
+src/tagCounter/__init__.py
+src/tagCounter/tagCounter.py
+src/tagCounter.egg-info/PKG-INFO
+src/tagCounter.egg-info/SOURCES.txt
+src/tagCounter.egg-info/dependency_links.txt
+src/tagCounter.egg-info/top_level.txt

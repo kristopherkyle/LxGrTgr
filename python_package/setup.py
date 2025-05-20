@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="lxgrtgr",
-    version="0.5.67",
+    version="0.5.69",
     author="Kristopher Kyle",
     author_email="kristopherkyle1@gmail.com",
     description="Lexicogrammatical tagging and tag counting tool",
@@ -16,6 +16,7 @@ setup(
     package_dir={"": "src"},
     package_data={"lxgrtgr": ["*.txt"]},
     include_package_data=True,
+	install_requires = ["lxgrcounter"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
