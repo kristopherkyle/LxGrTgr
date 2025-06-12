@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.72"
-version_notes = "0.0.5.72 - bug fixes"
+version = "0.0.5.76"
+version_notes = "0.0.5.76 - Update xtrapos+thatcls+jcomp; add xtrapos+thatcls+ncomp"
 
 import glob #for finding all filenames in a folder
 import os #for making folders
@@ -1011,7 +1011,10 @@ def verbs(token,sent): #need to add spearate tags for tense/aspect and passives
 		if token.cat5 == "compcls":
 			if sent[token.headidx].xpos[:2] == "VB" and token.idx != token.headidx:
 			#if sent[token.headidx].upos in ["VERB","AUX"] and token.idx != token.headidx:
-				token.cat7 = "vcomp"
+				if sent[token.headidx].lemma.lower() in ["be"]:
+					token.cat7 = "BEcomp"
+				else:
+					token.cat7 = "vcomp"
 			elif sent[token.headidx].xpos[:2] == "JJ":
 				if "so" in [x.word.lower() for x in sent if x.headidx == token.headidx and x.idx < token.idx]:
 				# if token.headidx > 0 and sent[token.headidx-1].word.lower() in ["so"]:
@@ -1297,7 +1300,7 @@ def that_wh(token,sent): #tweaked version
 			token.lxgrtag = "relpro"
 			token.cat1 = "relpro_wh"
 			#sent[token.headidx].cat8 = None
-	elif token.word.lower() in ["which","who","whom","whose","what","how","where","why","when"] and token.deprel in ["nsubj","nsubjpass","mark","attr","advmod","dobj"]:
+	elif token.word.lower() in ["which","who","whom","whose","what","how","where","why","when"] and token.deprel in ["nsubj","nsubjpass","mark","attr","advmod","dobj","dative"]:
 		if sent[token.headidx].deprel in ["ccomp","csubj","pcomp"]:
 			sent[token.headidx].cat6 = "whcls"
 			token.lxgrtag = "comp"
@@ -1308,6 +1311,7 @@ def that_wh(token,sent): #tweaked version
 			token.cat1 = "comp_wh"
 			# sent[token.headidx].lxgrtag = None #do not treat "well" as adverb
 			# sent[token.headidx].cat1 = None #do not treat "well" as adverb
+			#need to add something to deal with items like "He asked what it was like to run a marathon." (tagged as pobj of "like") - may need to add "be like" as a phrasal verb
 
 
 
@@ -1319,20 +1323,66 @@ def complexity(token,sent):
 	# 	token.cxtag = "cnd|cos|con+cls" #this name can be changed
 	if token.cat5 in ["advlcls"] and token.cat2 not in ["nonfinite"]:
 		token.cxtag = "finitecls+advl"
+	extrapos_candidate = False
+	if len([x for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"] and x.lemma in ["it"]]) > 0:
+		extrapos_candidate = True
 	if token.cat7 in ["vcomp"] and token.cat2 not in ["nonfinite"]: 
 		if token.idx > token.headidx or token.deprel in ["csubj"]: #if a finite clause comes after the verb OR is a clausal subject, updated on 2025-02-09
+			#active extraposed
+			if sent[token.headidx].lemma in ["seem","appear","follow"] and extrapos_candidate == True: #check for extraposition; lists on page 670 in LGSWE
+				if token.cat6 in ["thatcls"]: #Verb + that complement clause
+					token.cxtag = "xtrapos+thatcls+vcomp" 
+				elif token.cat8 in ["compdel"]: #Verb + that complement clause (with deletion)
+					token.cxtag = "xtrapos+thatcls+vcomp"
+			#passive extraposed
+			elif sent[token.headidx].cat4 in ["pasv_by","pasv_agls"] and extrapos_candidate == True: #lists on page 670 in LGSWE; # sent[token.headidx].word.lower() in ["found","known","assumed","said","shown"] and
+				if token.cat6 in ["thatcls"]: #Verb + that complement clause
+					token.cxtag = "xtrapos+thatcls+vcomp" #this name can be changed
+				elif token.cat8 in ["compdel"]: #Verb + that complement clause (with deletion)
+					token.cxtag = "xtrapos+thatcls+vcomp" #this name can be changed
+			#not extraposed
+			else:
+				if token.cat6 in ["thatcls"]: #Verb + that complement clause
+					token.cxtag = "thatcls+vcomp" #this name can be changed
+				elif token.cat8 in ["compdel"]: #Verb + that complement clause (with deletion)
+					token.cxtag = "thatcls+vcomp" #this name can be changed
+				elif token.cat6 in ["whcls"]: #verb + Wh clause
+					token.cxtag = "whcls+vcomp"
+
+	if token.cat7 in ["BEcomp"] and token.cat2 not in ["nonfinite"]: #added 2025-06-09
+		if token.idx > token.headidx: #if a finite clause comes after the verb OR is a clausal subject, updated on 2025-02-09
 			if token.cat6 in ["thatcls"]: #Verb + that complement clause
-				token.cxtag = "thatcls+vcomp" #this name can be changed
+				token.cxtag = "thatcls+BEcomp" #this name can be changed
 			elif token.cat8 in ["compdel"]: #Verb + that complement clause (with deletion)
-				token.cxtag = "thatcls+vcomp" #this name can be changed
+				token.cxtag = "thatcls+BEcomp" #this name can be changed
 			elif token.cat6 in ["whcls"]: #verb + Wh clause
-				token.cxtag = "whcls+vcomp"
-	
-	#updated 2024-02-14
-	if token.cxtag in ["thatcls+vcomp","whcls+vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]:	#could be simpler/clearer to also identify "it" as the nsubject	
-		token.cxtag = "xtrapos+thatcls+jcomp"
-		token.cat7 = "jcomp"
-	
+				token.cxtag = "whcls+BEcomp"
+		elif token.deprel in ["csubj"] and token.cat8 not in ["compdel"]:
+			if token.cat6 in ["thatcls"]: #Verb + that complement clause
+				token.cxtag = "thatcls+BEcomp" #this name can be changed
+			elif token.cat6 in ["whcls"]: #verb + Wh clause
+				token.cxtag = "whcls+BEcomp"
+
+	#updated 2025-06-12
+	if token.cxtag in ["thatcls+BEcomp"] and extrapos_candidate == True:
+		#if "acomp" in [x.deprel for x in sent if x.headidx == token.headidx]:# and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]:	#could be simpler/clearer to also identify "it" as the nsubject	
+		if len([x for x in sent if x.headidx == token.headidx and x.idx > x.headidx and x.deprel in ["acomp"]]) > 0:	
+			token.cxtag = "xtrapos+thatcls+jcomp"
+			token.cat7 = "jcomp"
+		elif len([x for x in sent if x.headidx == token.headidx and x.idx > x.headidx and x.deprel in ["attr"]]) > 0:
+			token.cxtag = "xtrapos+thatcls+ncomp"
+			token.cat7 = "ncomp"
+
+	if token.cxtag in ["whcls+BEcomp"] and extrapos_candidate == True:
+		#if "acomp" in [x.deprel for x in sent if x.headidx == token.headidx]:# and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]:	#could be simpler/clearer to also identify "it" as the nsubject	
+		if len([x for x in sent if x.headidx == token.headidx and x.idx > x.headidx and x.deprel in ["acomp"]]) > 0:	
+			token.cxtag = "xtrapos+whcls+jcomp"
+			token.cat7 = "jcomp"
+		# elif len([x for x in sent if x.headidx == token.headidx and x.idx > x.headidx and x.deprel in ["attr"]]) > 0:
+		# 	token.cxtag = "xtrapos+whcls+ncomp"
+		# 	token.cat7 = "ncomp"
+
+
 	if token.cat5 in ["nmod_cls"] and token.cat2 not in ["nonfinite"]: #this may need to be more restrictive
 		if token.cat7 in ["rel"]:
 			token.cxtag = "finitecls+rel" #verb + finite relative clause
@@ -1348,7 +1398,10 @@ def complexity(token,sent):
 				token.cxtag = "thatcls+jcomp"
 			elif token.cat8 in ["compdel"]:
 				token.cxtag = "thatcls+jcomp"
-		
+		if token.cxtag != "xtrapos+whcls+jcomp":
+			if token.cat6 in ["whcls"]:
+				token.cxtag = "whcls+jcomp"
+
 	
 	if token.cat7 in ["incomp"] and token.cat6 in ["whcls"]:
 		token.cxtag = "whcls+incomp" #Preposition + wh complement clause
@@ -1390,7 +1443,7 @@ def complexity(token,sent):
 		token.cxtag = "tocls+ncomp"
 	
 	if token.cat5 in ["compcls"] and token.cat6 in ["tocls"]: 
-			if token.cat7 in ["jcomp", "vcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]: #the "jcomp" might not be necessary
+			if token.cat7 in ["jcomp", "vcomp","BEcomp"] and sent[token.headidx].lemma == "be" and "acomp" in [x.deprel for x in sent if x.headidx == token.headidx] and "it" in [x.lemma for x in sent if x.headidx == token.headidx and x.deprel in ["nsubj","nsubjpass"]]: #the "jcomp" might not be necessary
 				token.cxtag = "xtrapos+tocls+jcomp"
 			elif token.cat7 in ["jcomp"]:
 				token.cxtag = "tocls+jcomp"
@@ -1448,11 +1501,14 @@ def complexity(token,sent):
 
 def coordinatedClauseAdjust(token,sent): #deal with coordinate clauses and wh-words in coordinated VPs
 	#deal with coordinated clauses
+	#Note on 2025-06-09 - this function overgeneralizes
 	if token.lxgrtag in ["vbmain"] and token.deprel in ["conj"] and token.cat2 not in ["nonfinite"]:
-		if sent[token.headidx].cxtag in ["thatcls+vcomp","whcls+vcomp"]: #may need to extend this...
-			token.cxtag = sent[token.headidx].cxtag
-			token.cat5 = sent[token.headidx].cat5
-			token.cat8 = sent[token.headidx].cat8
+		if len([x for x in sent if x.headidx == token.idx and x.deprel in ["nsubj","nsubjpass"]]): #added 2025-06-09
+			if sent[token.headidx].cxtag in ["thatcls+vcomp","whcls+vcomp","thatcls+BEcomp","whcls+BEcomp"]: #may need to extend this...
+				token.cxtag = sent[token.headidx].cxtag
+				token.cat5 = sent[token.headidx].cat5
+				token.cat8 = sent[token.headidx].cat8
+
 
 def cxLastPass(token,sent):
 	if token.lxgrtag in ["rb"] and token.cat1 in ["othr"]:
@@ -1816,6 +1872,43 @@ def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234
 # 	outf.close()
 # 	print("Finished writing output to",outName)
 
+#work on 2025-06-12
+# printer(tag("It is my conjecture that other governors engage in the same sort of opportunistic behavior."))
+# printer(tag("""It is fortunate that Hume does not say "by means of any definition" since he comes to this conclusion on the basis of rejecting a single proposed definition of substance."""))
+
+# #work on 2025-06-09+10
+# #double check:
+# ## coordinated clauses:
+# printer(tag("He suggested that they should stop and go."),verbose = True) #double check these in code
+# printer(tag("Further I believe that non-agriculture activities were not limited to the urban centers and could instead also be found in rural areas."),verbose = True)
+# printer(tag("It is interesting to note that swimmers on the team at U of M are never given a glossary sheet or even explicitly told what terms to remember."),verbose = True)
+# printer(tag("And they say I were to take Vietnamese ID, and when I would be eighteen, I would go back to take my French nationality, I don't want to be Vietnamese citizen."),verbose = True) #fix coordinated clause adjust - it doesn't differentiate between coordinated verbs and coordinated clauses
+# printer(tag("""The Columbus Dispatch also notes [3] that in Ohio state benefits "are more generous and continue longer than in Indiana, and although Honda is self-insured, it generally matches state benefits" ."""),verbose = True) #
+# printer(tag(""""I'm conscious of the fact that I guess bars are kind of like a sexual environment or that people are trying to hit on each other or pick up on each other who's looking at you, who's I don't know."""),verbose = True)
+# printer(tag("""What makes Pelops a strong, respectable masculine figure is that he confronts Poseidon with a bold proposition – that if the god appreciated his sexual services, Poseidon will help him win Hippodameia, "the glorious daughter of a king in Pisa," as his wife."""),verbose = True)
+# printer(tag("""In consequence of these observations, all interpretations of Cicero's transmission of earlier text and idea must be held provisionally, since, where there exist no exact comparata for the translations and adaptations of the author, the reader is cautioned by the arguments thus far advanced that Cicero represents nothing resembling an equitable and disinterested mirror for the positions of others authors, rather, the highly polished form of the philosophical works disguises some – perhaps unrecoverable – distortion of all that they reflect."""),verbose = True)
+# ## object predicates:
+# printer(tag("They were disappointed to find the cafeteria closed."),verbose = True) #double check these in code - "closed" should not be thatcls+vcomp
+
+# #fix/update:
+# printer(tag("The finding is that fear improved the partial memory."),verbose = True) #need to add BEcomp (Done)
+# printer(tag("It is clear that I am tired"))
+# printer(tag("well these are identical, the only difference is that, they have a different number."))
+# printer(tag("but part of it as well is that, that's the city where most of the people, who write this stuff live, and they're writing what they know."))
+# printer(tag("what i want you to do now, is determine how much longer it took you to print your name with your opposite hand."))
+# printer(tag("Janine she's, um, gonna tell you a little bit more about what she's doing that's why we have a microphone, just so you all know, what's going on and, consent to it."),verbose = True)
+# printer(tag("in order to get tenure you know, so, i know what that battle looks like, and i know that there's been a lot of progress made, and i i just think, you can have, the academic life that you want."),verbose = True)
+# printer(tag("I know what that is."),verbose = True)
+# printer(tag("it's like ooh this is not good to hear, but that's what he told me and as someone who's been President and, uh, seen a lot of other universities"),verbose = True)
+# printer(tag("It appears that we are wrong.")) #need to add xtrapos+thatcls+vcomp
+# printer(tag("It seems that we are wrong.")) #need to add xtrapos+thatcls+vcomp
+# printer(tag("It seems tired.")) #need to add xtrapos+thatcls+vcomp
+#lxgr.printer(lxgr.tag("It is known that parents are tired."),verbose = True)
+# printer(tag("These results were well matched with the known fact that M. trichosporium OB3b can express either sMMO or pMMO depending on copper concentration [3]."))
+
+
+
+
 # work on 2025-02-21
 ### test selection of single-word linking adverbs
 # printer(tag("First, I ate pizza, then I drank beer."),verbose = True)
@@ -1959,6 +2052,7 @@ def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234
 # printer(tag("The policy was implemented instead of being optional."), verbose=True)
 # printer(tag("The concept is valuable as distinct from its execution."), verbose=True)
 # printer(tag("The representation of space is necessary in order to be aware of things as distinct from ourselves and from each other"), verbose=True)
+# printer(tag("You are here is true."), verbose=True)
 
 # printer(tag("They offered extra services in exchange for a higher fee."), verbose=True)
 # printer(tag("She did the extra work in return for a day off."), verbose=True)
