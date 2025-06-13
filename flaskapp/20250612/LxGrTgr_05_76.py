@@ -26,8 +26,8 @@ See https://creativecommons.org/licenses/by-nc-sa/4.0/ for a summary of the lice
 
 """
 ### imports ####################################
-version = "0.0.5.77"
-version_notes = "0.0.5.77 - Update whcls identification"
+version = "0.0.5.76"
+version_notes = "0.0.5.76 - Update xtrapos+thatcls+jcomp; add xtrapos+thatcls+ncomp"
 
 import glob #for finding all filenames in a folder
 import os #for making folders
@@ -36,21 +36,20 @@ import re #for regulat expressions
 #from importlib_resources import files #for opening package files - need to include in package dependencies
 import math
 from pathlib import Path #windows + mac compatibility
-from tagCounter import *
+#from tagCounter import *
 ### spacy
-print("Importing Spacy")
-import spacy_transformers
-import spacy_alignments
-import spacy_transformers.pipeline_component
+#print("Importing Spacy")
+# import spacy_transformers
+# import spacy_alignments
+# import spacy_transformers.pipeline_component
 import spacy #base NLP
-print("Spacy Successfully Loaded")
-from spacy.tokens import Doc
-from spacy.language import Language
-#nlp = spacy.load("en_core_web_sm") #load model
-print("Loading Transformer Model")
-nlp = spacy.load("en_core_web_trf")  #load model
-# nlp = None
-print("Transformer Model Successfully Loaded")
+# print("Spacy Successfully Loaded")
+# from spacy.tokens import Doc
+# from spacy.language import Language
+nlp = spacy.load("en_core_web_sm") #load model
+# print("Loading Transformer Model")
+# # nlp = spacy.load("en_core_web_trf")  #load model
+# print("Transformer Model Successfully Loaded")
 nlp.max_length = 1728483 #allow more characters to be processed than default. This allows longer documents to be processed. This may need to be made longer.
 
 #the following is only used when attempting to align outputs
@@ -1305,21 +1304,10 @@ def that_wh(token,sent): #tweaked version
 			sent[token.headidx].cat6 = "whcls"
 			token.lxgrtag = "comp"
 			token.cat1 = "comp_wh"
-		elif sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].word.lower() in ["well"]:
+		elif sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].deprel in ["advmod"] and sent[token.headidx].word.lower() in ["well"]:
 			sent[sent[token.headidx].headidx].cat6 = "whcls"
 			token.lxgrtag = "comp"
 			token.cat1 = "comp_wh"
-		elif token.word.lower() in ["how"] and token.deprel in ["advmod"] and sent[token.headidx].deprel in ["acomp"]:
-			sent[sent[token.headidx].headidx].cat6 = "whcls"
-			token.lxgrtag = "comp"
-			token.cat1 = "comp_wh"
-
-	elif token.word.lower() in ["which","who","whom","whose","what","how","where","why","when"] and token.deprel in ["pobj"]:
-		if sent[token.headidx].deprel in ["prep"] and sent[sent[token.headidx].lxgrtag in ["vbmain"]]:
-			sent[sent[token.headidx].headidx].cat6 = "whcls"
-			token.lxgrtag = "comp"
-			token.cat1 = "comp_wh"
-
 			# sent[token.headidx].lxgrtag = None #do not treat "well" as adverb
 			# sent[token.headidx].cat1 = None #do not treat "well" as adverb
 			#need to add something to deal with items like "He asked what it was like to run a marathon." (tagged as pobj of "like") - may need to add "be like" as a phrasal verb
@@ -1886,22 +1874,7 @@ def writeIOB(loSentStr,writeLoc,nSamps = False, splits = [.8,.1,.1],rSeed = 1234
 #work on 2025-06-12
 # printer(tag("It is my conjecture that other governors engage in the same sort of opportunistic behavior."))
 # printer(tag("""It is fortunate that Hume does not say "by means of any definition" since he comes to this conclusion on the basis of rejecting a single proposed definition of substance."""))
-# printer(tag("He asked what it was like to run a marathon."),verbose = True)
-# printer(tag("I know what I came for."),verbose = True)
-# printer(tag("The pizza is why I am here."),verbose = True)
-# printer(tag("and hang gliding is the s- is the least risky here, and look how less risky it is to go hang gliding than what?"),verbose = True)
-# printer(tag("And that is why we got pizza"),verbose = True)
-# printer(tag("and as i read, i asked what was it like to develop breasts or begin your periods a century ago?"))
-# printer(tag("well um, she wants to know how reliable the bird atlases are with groups of people going out."))
-# printer(tag("the state, and our donors and our parents who are paying here, hafta be partners in the sense of seeing, what comes back what comes out um in return."),verbose = True)
-# printer(tag("okay. let's_ why don't we write the the X Y and E above here in the book if you can"),verbose = True)
-# printer(tag("that is what he told me"))
-# printer(tag("um what i have tried to do in the coursepack is, put in uh those figures that i'm going to use uh, during my lectures that i think would be helpful to you to have."),verbose = True)
-# printer(tag("It was last year when they were admitted."),verbose = True)
-# printer(tag("I marked where that crossed the line"),verbose = True)
-# printer(tag("he spoke about how slavery was legal"))
-# printer(tag("Understanding for whom early intervention is useful will help parents and teachers provide optimal learning environments for all children."),verbose = True)
-# printer(tag("Does the development of gender identity and the attainment of gender constancy influence whom one interacts with?"))
+
 # #work on 2025-06-09+10
 # #double check:
 # ## coordinated clauses:
