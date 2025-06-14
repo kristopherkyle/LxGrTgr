@@ -7,9 +7,11 @@ import re #for regulat expressions
 import math
 from pathlib import Path #windows + mac compatibility
 
+version = "0.5"
+
 def countTagsFile(fname,tagList = None): 
 	if tagList == None:
-		tagList = ["finitecls+advl","thatcls+vcomp","whcls+vcomp","finitecls+rel","thatcls+ncomp","thatcls+jcomp","xtrapos+thatcls+jcomp","whcls+incomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
+		tagList = ["thatcls+jcomp","xtrapos+thatcls+jcomp",'whcls+jcomp','xtrapos+whcls+jcomp',"finitecls+advl","thatcls+ncomp",'xtrapos+thatcls+ncomp',"finitecls+rel","whcls+incomp","thatcls+vcomp","thatcls+BEcomp","xtrapos+thatcls+vcomp","whcls+vcomp","whcls+BEcomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
 	outd = {"ntokens":0}
 	ignored = []
 	for tag in tagList:
@@ -53,7 +55,7 @@ def countTagsFolder(targetDir,tagList = None,suff = ".txt"): #need to add this t
 
 def writeCounts(outputD,outName, tagList = None, sep = "\t", normed = True,norming = 10000): #defaults to normed counts (per 10,000 tokens)
 	if tagList == None:
-		tagList = ["finitecls+advl","thatcls+vcomp","whcls+vcomp","finitecls+rel","thatcls+ncomp","thatcls+jcomp","xtrapos+thatcls+jcomp","whcls+incomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
+		tagList = ["thatcls+jcomp","xtrapos+thatcls+jcomp",'whcls+jcomp','xtrapos+whcls+jcomp',"finitecls+advl","thatcls+ncomp",'xtrapos+thatcls+ncomp',"finitecls+rel","whcls+incomp","thatcls+vcomp","thatcls+BEcomp","xtrapos+thatcls+vcomp","whcls+vcomp","whcls+BEcomp","tocls+advl","ingcls+advl","edcls+advl","tocls+vcomp","tocls+ncomp","ingcls+vcomp","edcls+rel","ingcls+rel","tocls+rel","tocls+jcomp","xtrapos+tocls+jcomp","ingcls+incomp","rb+advl","in+advl","attr+npremod","nn+npremod","of+npostmod","in+npostmod","appos+npostmod","in+jcomp","rb+jjrbmod"]
 	header = ["filename","ntokens"] + tagList
 	outL = [sep.join(header)]
 	for fname in outputD:

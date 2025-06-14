@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="lxgrCounter",
-    version="0.2",
+    version="0.5",
     author="Kristopher Kyle",
     author_email="kristopherkyle1@gmail.com",
     description="Tag counting tool for LxGrTagger",
